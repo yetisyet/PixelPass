@@ -1264,6 +1264,1591 @@ input {
   }
 }
 
+/* --------------------------------------------------------------------------
+   Frontend-first vault setup, recovery, and rolling passcodes
+   -------------------------------------------------------------------------- */
+
+::selection {
+  color: #102c3d;
+  background: #a9dff7;
+}
+
 * {
-  cursor: url('https://cdn.cursors-4u.net/previews/windows-7-pointer-f9355ed9-32.webp') 32 32, auto !important;
+  scrollbar-color: #8bb8cf #e6f2f8;
+  scrollbar-width: thin;
+}
+
+:focus-visible {
+  outline: 2px solid #176fa2;
+  outline-offset: 2px;
+}
+
+.pixelpass-flow-window {
+  width: min(960px, 100%);
+  height: min(690px, calc(100vh - 92px));
+  min-height: 470px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 20px 52px rgba(7, 35, 52, 0.58);
+}
+
+.pixelpass-flow-window > .title-bar,
+.pixelpass-flow-window > .status-bar {
+  flex: 0 0 auto;
+}
+
+.pixelpass-flow-body {
+  min-height: 0;
+  flex: 1;
+  margin: 0 6px 6px;
+  padding: 0;
+  overflow: auto;
+  border: 1px solid #7295aa;
+  background:
+    radial-gradient(circle at 13% 5%, rgba(255, 255, 255, 0.95), transparent 25%),
+    linear-gradient(135deg, #f9fdff 0%, #edf7fc 52%, #dceef7 100%);
+}
+
+.pixelpass-choice-layout,
+.pixelpass-unlock-layout {
+  min-height: 100%;
+  display: grid;
+  grid-template-columns: minmax(280px, 0.92fr) minmax(360px, 1.08fr);
+}
+
+.pixelpass-choice-story,
+.pixelpass-unlock-art {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(34px, 6vw, 66px);
+  overflow: hidden;
+  color: #173d55;
+  border-right: 1px solid #9bbdcc;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.92), transparent 28%),
+    linear-gradient(145deg, rgba(205, 240, 250, 0.95), rgba(129, 199, 225, 0.88));
+}
+
+.pixelpass-choice-story::after,
+.pixelpass-unlock-art::after {
+  width: 230px;
+  height: 230px;
+  position: absolute;
+  right: -90px;
+  bottom: -110px;
+  content: "";
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 50%;
+  box-shadow:
+    inset 14px 18px 34px rgba(255, 255, 255, 0.44),
+    0 12px 28px rgba(29, 101, 134, 0.18);
+  background: rgba(255, 255, 255, 0.13);
+}
+
+.pixelpass-choice-logo {
+  width: min(260px, 82%);
+  margin: 0 0 30px -12px;
+  filter: drop-shadow(0 9px 10px rgba(52, 88, 108, 0.24));
+}
+
+.pixelpass-choice-story h1,
+.pixelpass-unlock-form h1,
+.pixelpass-flow-heading h1,
+.pixelpass-ceremony h1,
+.pixelpass-passcodes-heading h1 {
+  margin: 0;
+  color: #164f70;
+  font-weight: 350;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.pixelpass-choice-story h1 {
+  max-width: 470px;
+  font-size: clamp(32px, 5vw, 50px);
+}
+
+.pixelpass-choice-story > p {
+  max-width: 54ch;
+  margin: 18px 0 0;
+  color: #315b70;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.pixelpass-proof-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 24px;
+  color: #294f61;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.pixelpass-proof-line svg {
+  width: 21px;
+  height: 21px;
+  color: #78518c;
+}
+
+.pixelpass-choice-actions {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: clamp(34px, 6vw, 70px);
+  background: rgba(252, 254, 255, 0.64);
+}
+
+.win7 .pixelpass-path-button {
+  width: 100%;
+  min-height: 126px;
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 22px;
+  align-items: center;
+  gap: 16px;
+  padding: 18px 20px;
+  color: #173f56;
+  text-align: left;
+  border-color: #92b6ca;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.96),
+    0 7px 18px rgba(34, 91, 120, 0.15);
+  background: linear-gradient(#fff, #e9f5fb 52%, #d6eaf4);
+}
+
+.win7 .pixelpass-path-button:hover {
+  border-color: #4c9ec7;
+  box-shadow:
+    inset 0 1px #fff,
+    0 10px 22px rgba(32, 105, 142, 0.22);
+}
+
+.win7 .pixelpass-path-button.is-primary {
+  border-color: #729ec0;
+  background: linear-gradient(#fff 0%, #edf8ff 44%, #c8e8f8 45%, #e2f5ff 100%);
+}
+
+.pixelpass-path-button > span:nth-child(2) {
+  min-width: 0;
+}
+
+.pixelpass-path-button strong,
+.pixelpass-path-button small {
+  display: block;
+}
+
+.pixelpass-path-button strong {
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.pixelpass-path-button small {
+  margin-top: 5px;
+  color: #496777;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.pixelpass-path-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  border: 1px solid #4d7f9c;
+  border-radius: 9px;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.68),
+    0 3px 7px rgba(35, 78, 102, 0.22);
+  background: linear-gradient(#75bddd, #317da7 49%, #226b95 51%, #4c9cc0);
+}
+
+.pixelpass-path-button:nth-child(2) .pixelpass-path-icon {
+  border-color: #71517e;
+  background: linear-gradient(#c99ad5, #8a619b 49%, #6d4b7d 51%, #a174ae);
+}
+
+.pixelpass-path-icon svg {
+  width: 27px;
+  height: 27px;
+}
+
+.pixelpass-unlock-art {
+  align-items: center;
+}
+
+.pixelpass-unlock-art > img {
+  width: min(310px, 92%);
+  z-index: 1;
+  filter: drop-shadow(0 10px 12px rgba(27, 83, 111, 0.25));
+}
+
+.pixelpass-unlock-seal {
+  width: 64px;
+  height: 64px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  margin-top: 28px;
+  color: #fff;
+  border: 1px solid #674b74;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.7),
+    0 8px 18px rgba(73, 46, 83, 0.27);
+  background: linear-gradient(#c79ad4, #7c578c 53%, #9567a6);
+}
+
+.pixelpass-unlock-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(38px, 7vw, 76px);
+}
+
+.pixelpass-unlock-form h1 {
+  font-size: clamp(28px, 4vw, 42px);
+}
+
+.pixelpass-unlock-form > p {
+  max-width: 54ch;
+  margin: 16px 0 30px;
+  color: #456474;
+  line-height: 1.55;
+}
+
+.pixelpass-unlock-form > label,
+.pixelpass-recovery-result > label,
+.pixelpass-master-key-fields > label {
+  margin-bottom: 6px;
+  color: #294e63;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.win7 .pixelpass-unlock-form > input,
+.win7 .pixelpass-recovery-result > input,
+.win7 .pixelpass-master-key-fields > input {
+  width: 100%;
+  min-height: 31px;
+  box-sizing: border-box;
+}
+
+.pixelpass-form-actions,
+.pixelpass-step-actions,
+.pixelpass-picker-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pixelpass-form-actions {
+  margin-top: 22px;
+}
+
+.win7 .pixelpass-form-actions button,
+.win7 .pixelpass-step-actions button,
+.win7 .pixelpass-picker-actions button,
+.win7 .pixelpass-recovery-picker > button,
+.win7 .pixelpass-recovery-result > button,
+.pixelpass-command-bar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+
+.pixelpass-inline-error {
+  margin-top: 14px;
+  padding: 9px 11px;
+  color: #6c2020;
+  border: 1px solid #d39a9a;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fff7f7, #f5dddd);
+  line-height: 1.4;
+}
+
+.pixelpass-guided-flow {
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 24px clamp(24px, 5vw, 52px) 30px;
+}
+
+.pixelpass-flow-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+}
+
+.pixelpass-flow-heading > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.pixelpass-flow-heading h1 {
+  font-size: clamp(25px, 4vw, 36px);
+}
+
+.pixelpass-flow-heading p,
+.pixelpass-step-copy p,
+.pixelpass-passcodes-heading p {
+  margin: 6px 0 0;
+  color: #526c7b;
+  line-height: 1.45;
+}
+
+.win7 .pixelpass-icon-button {
+  width: 30px;
+  min-width: 30px;
+  height: 29px;
+  padding: 0;
+}
+
+.pixelpass-icon-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pixelpass-demo-badge {
+  flex: 0 0 auto;
+  margin-top: 3px;
+  padding: 4px 8px;
+  color: #5d3f68;
+  border: 1px solid #b9a0c0;
+  border-radius: 9px;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fff, #ede3f1);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pixelpass-flow-progress {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  margin: 23px 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.pixelpass-flow-progress li {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #6a7c87;
+}
+
+.pixelpass-flow-progress li:not(:last-child)::after {
+  height: 1px;
+  position: absolute;
+  right: 9px;
+  left: 38px;
+  bottom: -9px;
+  content: "";
+  background: #b9cbd5;
+}
+
+.pixelpass-flow-progress li > span {
+  width: 24px;
+  height: 24px;
+  z-index: 1;
+  display: grid;
+  flex: 0 0 24px;
+  place-items: center;
+  border: 1px solid #aabcc7;
+  border-radius: 50%;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fff, #e8edf0);
+  font-size: 10px;
+}
+
+.pixelpass-flow-progress li > span svg {
+  width: 13px;
+  height: 13px;
+}
+
+.pixelpass-flow-progress li strong {
+  font-size: 10px;
+}
+
+.pixelpass-flow-progress .is-current,
+.pixelpass-flow-progress .is-complete {
+  color: #234e66;
+}
+
+.pixelpass-flow-progress .is-current > span,
+.pixelpass-flow-progress .is-complete > span {
+  color: #fff;
+  border-color: #477c9b;
+  background: linear-gradient(#73b9d9, #327fa8 52%, #276f98);
+}
+
+.pixelpass-step-panel {
+  min-height: 410px;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border: 1px solid #a9bfcc;
+  box-shadow:
+    inset 0 1px #fff,
+    0 7px 18px rgba(42, 89, 112, 0.13);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.pixelpass-step-content {
+  flex: 1;
+}
+
+.pixelpass-step-copy h2 {
+  margin: 0;
+  color: #214f69;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+.pixelpass-source-rail {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+  margin: 20px 0 16px;
+}
+
+.win7 .pixelpass-source-rail button {
+  min-height: 82px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px;
+  color: #31556a;
+  text-align: left;
+}
+
+.win7 .pixelpass-source-rail button.is-selected {
+  color: #183e56;
+  border-color: #65a5c8;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
+  background: linear-gradient(#f9fdff, #d3edf9 48%, #b8def0 49%, #e5f6fd);
+}
+
+.pixelpass-source-rail svg {
+  width: 20px;
+  height: 20px;
+  margin-bottom: 3px;
+  color: #7e598f;
+}
+
+.pixelpass-source-rail strong,
+.pixelpass-source-rail small {
+  display: block;
+}
+
+.pixelpass-source-rail strong {
+  font-size: 11px;
+}
+
+.pixelpass-source-rail small {
+  color: #607581;
+  font-size: 9px;
+}
+
+.pixelpass-image-strip {
+  min-height: 118px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pixelpass-image-tile {
+  min-width: 0;
+  height: 112px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 9px;
+  overflow: hidden;
+  color: #214a61;
+  text-align: center;
+  border: 1px solid #8fb2c5;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.9),
+    0 3px 8px rgba(40, 91, 117, 0.13);
+  background:
+    linear-gradient(rgba(239, 249, 253, 0.48), rgba(183, 221, 238, 0.78)),
+    linear-gradient(145deg, #bce6f1, #7fc2dc);
+  background-position: center;
+  background-size: cover;
+}
+
+.pixelpass-image-tile:nth-child(2n) {
+  background:
+    linear-gradient(rgba(244, 240, 248, 0.44), rgba(194, 168, 207, 0.74)),
+    linear-gradient(145deg, #e5d5eb, #ac85bc);
+  background-position: center;
+  background-size: cover;
+}
+
+.pixelpass-image-tile:nth-child(3n) {
+  background:
+    linear-gradient(rgba(246, 253, 225, 0.42), rgba(151, 204, 116, 0.7)),
+    linear-gradient(145deg, #e0f2b7, #81ba78);
+  background-position: center;
+  background-size: cover;
+}
+
+.pixelpass-image-tile::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  pointer-events: none;
+  box-shadow: inset 0 0 22px rgba(255, 255, 255, 0.25);
+}
+
+.pixelpass-image-tile svg {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 8px;
+  filter: drop-shadow(0 1px #fff);
+}
+
+.pixelpass-image-tile span,
+.pixelpass-image-tile small {
+  z-index: 1;
+  max-width: 100%;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pixelpass-image-tile span {
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.pixelpass-image-tile small {
+  margin-top: 3px;
+  color: #466879;
+  font-size: 8px;
+}
+
+.pixelpass-paste-zone {
+  min-height: 128px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  overflow: hidden;
+  color: #4d6878;
+  border: 1px dashed #6d9db7;
+  background: linear-gradient(rgba(255, 255, 255, 0.8), rgba(222, 241, 249, 0.8));
+}
+
+.pixelpass-paste-zone img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+}
+
+.pixelpass-paste-zone svg {
+  width: 32px;
+  height: 32px;
+  color: #7e598f;
+}
+
+.pixelpass-path-readout {
+  margin: 10px 0 0;
+  overflow-wrap: anywhere;
+  color: #4c6776;
+  font-size: 10px;
+}
+
+.pixelpass-step-actions {
+  justify-content: flex-start;
+  margin-top: 20px;
+  padding-top: 14px;
+  border-top: 1px solid #d1dce2;
+}
+
+.pixelpass-threshold-step {
+  display: flex;
+  flex-direction: column;
+}
+
+.pixelpass-threshold-visual {
+  display: flex;
+  align-items: flex-end;
+  justify-content: safe center;
+  gap: 12px;
+  margin: 34px 0 24px;
+  padding-bottom: 4px;
+  overflow-x: auto;
+}
+
+.pixelpass-threshold-visual > span {
+  width: 70px;
+  height: 82px;
+  flex: 0 0 70px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #718691;
+  border: 1px solid #b3c3cc;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#f8fafb, #e3eaee);
+}
+
+.pixelpass-threshold-visual > span.is-required {
+  color: #fff;
+  border-color: #507f99;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.7),
+    0 5px 12px rgba(41, 101, 133, 0.18);
+  background: linear-gradient(#8bc7df, #3c88ae 51%, #2e7198);
+}
+
+.pixelpass-threshold-visual svg {
+  width: 28px;
+  height: 28px;
+}
+
+.pixelpass-threshold-visual small {
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+.pixelpass-threshold-control {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr) 64px;
+  align-items: center;
+  gap: 14px;
+}
+
+.pixelpass-threshold-control > span {
+  color: #355c70;
+  font-weight: 600;
+}
+
+.pixelpass-threshold-control > strong {
+  order: 3;
+  color: #684b74;
+  font-size: 16px;
+  text-align: right;
+}
+
+.pixelpass-threshold-control input {
+  width: 100%;
+}
+
+.pixelpass-survival-note {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin-top: 22px;
+  padding: 12px 14px;
+  color: #315e42;
+  border: 1px solid #9cc2a8;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fbfffc, #e2f1e6);
+}
+
+.pixelpass-survival-note svg {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+}
+
+.pixelpass-survival-note strong,
+.pixelpass-survival-note span {
+  display: block;
+}
+
+.pixelpass-survival-note span {
+  margin-top: 2px;
+  font-size: 10px;
+}
+
+.pixelpass-seal-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(220px, 0.72fr);
+  gap: 30px;
+  margin-top: 28px;
+}
+
+.pixelpass-master-key-fields {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.pixelpass-master-key-fields > label {
+  margin: 0;
+}
+
+.pixelpass-master-key-fields > small {
+  grid-column: 2;
+  color: #5d7280;
+  line-height: 1.4;
+}
+
+.pixelpass-vault-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  color: #3c5665;
+  text-align: center;
+  border: 1px solid #aebfca;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fbfdff, #e7f1f6);
+}
+
+.pixelpass-vault-summary > svg {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 13px;
+  color: #805b91;
+}
+
+.pixelpass-vault-summary strong,
+.pixelpass-vault-summary span {
+  display: block;
+}
+
+.pixelpass-vault-summary strong {
+  color: #234e65;
+  font-size: 15px;
+}
+
+.pixelpass-vault-summary span {
+  margin-top: 5px;
+  font-size: 10px;
+}
+
+.pixelpass-recovery-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(250px, 0.75fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.pixelpass-recovery-picker,
+.pixelpass-recovery-result {
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 20px;
+  border: 1px solid #a9bfcc;
+  box-shadow:
+    inset 0 1px #fff,
+    0 6px 16px rgba(41, 86, 108, 0.12);
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.pixelpass-picker-actions {
+  margin: 18px 0 14px;
+}
+
+.pixelpass-recovery-picker .pixelpass-image-strip {
+  min-height: 92px;
+  margin-bottom: 14px;
+}
+
+.pixelpass-recovery-picker .pixelpass-image-tile {
+  height: 88px;
+  padding: 6px;
+}
+
+.pixelpass-recovery-picker .pixelpass-image-tile svg {
+  width: 22px;
+  height: 22px;
+  margin-bottom: 5px;
+}
+
+.pixelpass-recovery-empty,
+.pixelpass-result-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #607582;
+  text-align: center;
+}
+
+.pixelpass-recovery-empty {
+  min-height: 120px;
+  margin-bottom: 14px;
+  border: 1px dashed #a5bbc7;
+  background: #f5fafc;
+}
+
+.pixelpass-recovery-empty svg,
+.pixelpass-result-placeholder svg {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 8px;
+  color: #835d94;
+}
+
+.pixelpass-recovery-result {
+  display: flex;
+  flex-direction: column;
+}
+
+.pixelpass-result-placeholder {
+  min-height: 100%;
+  padding: 24px;
+}
+
+.pixelpass-result-placeholder strong,
+.pixelpass-result-placeholder span {
+  display: block;
+}
+
+.pixelpass-result-placeholder span {
+  max-width: 30ch;
+  margin-top: 5px;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.pixelpass-share-verdict {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #c7a1a1;
+  background: #fff0f0;
+}
+
+.pixelpass-share-verdict.is-ready {
+  color: #315f43;
+  border-color: #96bca3;
+  background: #edf8f0;
+}
+
+.pixelpass-share-verdict > svg {
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+}
+
+.pixelpass-share-verdict strong,
+.pixelpass-share-verdict span {
+  display: block;
+}
+
+.pixelpass-share-verdict span {
+  margin-top: 2px;
+  font-size: 9px;
+}
+
+.pixelpass-share-meter {
+  display: flex;
+  gap: 5px;
+  margin: 14px 0;
+}
+
+.pixelpass-share-meter span {
+  height: 8px;
+  flex: 1;
+  border: 1px solid #c1ccd2;
+  background: #e3e9ec;
+}
+
+.pixelpass-share-meter span.is-found {
+  border-color: #5a8e73;
+  background: linear-gradient(#9bcbaa, #52936d);
+}
+
+.pixelpass-recovery-facts {
+  margin: 0 0 17px;
+}
+
+.pixelpass-recovery-facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid #dce5e9;
+}
+
+.pixelpass-recovery-facts dt {
+  color: #627783;
+}
+
+.pixelpass-recovery-facts dd {
+  margin: 0;
+  color: #284f65;
+  font-weight: 600;
+}
+
+.pixelpass-recovery-result > input {
+  margin-bottom: 12px;
+}
+
+.pixelpass-recovery-result > button {
+  margin-top: auto;
+  align-self: flex-start;
+}
+
+.pixelpass-ceremony {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 36px;
+  text-align: center;
+}
+
+.pixelpass-ceremony h1 {
+  max-width: 680px;
+  margin-top: 28px;
+  font-size: clamp(27px, 4vw, 42px);
+}
+
+.pixelpass-ceremony-scene {
+  width: min(640px, 92%);
+  height: 180px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pixelpass-data-capsule {
+  width: 74px;
+  height: 74px;
+  position: absolute;
+  left: 4%;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  border: 1px solid #654b72;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.68),
+    0 10px 24px rgba(76, 48, 87, 0.25);
+  background: linear-gradient(#c79bd3, #815b91 52%, #684775);
+}
+
+.pixelpass-data-capsule svg {
+  width: 32px;
+  height: 32px;
+}
+
+.pixelpass-share-flight {
+  position: absolute;
+  inset: 0;
+}
+
+.pixelpass-share-flight span {
+  width: 30px;
+  height: 30px;
+  position: absolute;
+  top: 74px;
+  left: 14%;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  color: #204e68;
+  border: 1px solid #6d9cb4;
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(38, 82, 104, 0.2);
+  background: linear-gradient(#fff, #c9e8f5);
+  font-size: 10px;
+  font-weight: 700;
+  animation: pixelpass-share-travel 1.85s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.pixelpass-share-flight span:nth-child(2) { animation-delay: 0.12s; }
+.pixelpass-share-flight span:nth-child(3) { animation-delay: 0.24s; }
+.pixelpass-share-flight span:nth-child(4) { animation-delay: 0.36s; }
+.pixelpass-share-flight span:nth-child(5) { animation-delay: 0.48s; }
+
+.pixelpass-ceremony-images {
+  position: absolute;
+  right: 0;
+  left: 39%;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 9px;
+}
+
+.pixelpass-ceremony-images span {
+  height: 102px;
+  display: grid;
+  place-items: center;
+  color: #2b6888;
+  border: 1px solid #75a9c1;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.83),
+    0 5px 13px rgba(36, 86, 111, 0.16);
+  background: linear-gradient(145deg, #c7ebf5, #70b8d5);
+}
+
+.pixelpass-ceremony-images span:nth-child(2n) {
+  color: #714d7e;
+  border-color: #a784af;
+  background: linear-gradient(145deg, #eadcf0, #b18abe);
+}
+
+.pixelpass-ceremony-images span:nth-child(3n) {
+  color: #496a38;
+  border-color: #8eb77d;
+  background: linear-gradient(145deg, #e5f3c6, #91c882);
+}
+
+.pixelpass-ceremony-images svg {
+  width: 30px;
+  height: 30px;
+}
+
+.pixelpass-ceremony-steps {
+  display: flex;
+  gap: 28px;
+  margin: 26px 0 0;
+  padding: 0;
+  color: #71838e;
+  list-style: none;
+}
+
+.pixelpass-ceremony-steps li {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+}
+
+.pixelpass-ceremony-steps li span {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #aabac3;
+  border-radius: 50%;
+  background: #eef3f5;
+}
+
+.pixelpass-ceremony-steps li span svg {
+  width: 12px;
+  height: 12px;
+}
+
+.pixelpass-ceremony-steps .is-current,
+.pixelpass-ceremony-steps .is-complete {
+  color: #234f67;
+}
+
+.pixelpass-ceremony-steps .is-current span,
+.pixelpass-ceremony-steps .is-complete span {
+  color: #fff;
+  border-color: #5a869f;
+  background: #4b91b4;
+}
+
+.pixelpass-flow-loading {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #426578;
+}
+
+.pixelpass-flow-loading > svg {
+  width: 42px;
+  height: 42px;
+  color: #805a91;
+}
+
+.pixelpass-flow-loading .marquee {
+  width: min(340px, 70%);
+}
+
+@keyframes pixelpass-share-travel {
+  0% {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translate(0, 0) scale(0.7);
+  }
+  18% { opacity: 1; }
+  78% { opacity: 1; }
+  100% {
+    opacity: 0;
+    filter: blur(0);
+    transform: translate(340px, var(--share-y, 0)) scale(0.92);
+  }
+}
+
+.pixelpass-share-flight span:nth-child(1) { --share-y: -40px; }
+.pixelpass-share-flight span:nth-child(2) { --share-y: -20px; }
+.pixelpass-share-flight span:nth-child(3) { --share-y: 0; }
+.pixelpass-share-flight span:nth-child(4) { --share-y: 20px; }
+.pixelpass-share-flight span:nth-child(5) { --share-y: 40px; }
+
+/* Rolling passcodes */
+
+.pixelpass-passcode-content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.pixelpass-passcodes {
+  min-height: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 18px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 90% 2%, rgba(193, 231, 246, 0.72), transparent 27%),
+    #f8fcfe;
+}
+
+.pixelpass-passcodes-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.pixelpass-passcodes-heading h1 {
+  font-size: 24px;
+}
+
+.pixelpass-passcodes-heading p {
+  font-size: 10px;
+}
+
+.pixelpass-passcode-explainer {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 16px 0;
+  padding: 11px 13px;
+  color: #355b70;
+  border: 1px solid #acc5d2;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fff, #e7f4fa);
+}
+
+.pixelpass-passcode-explainer > svg {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 27px;
+  color: #805b91;
+}
+
+.pixelpass-passcode-explainer > div {
+  min-width: 0;
+  flex: 1;
+}
+
+.pixelpass-passcode-explainer strong,
+.pixelpass-passcode-explainer span {
+  display: block;
+}
+
+.pixelpass-passcode-explainer span {
+  margin-top: 2px;
+  font-size: 9px;
+}
+
+.win7 .pixelpass-passcode-explainer button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.pixelpass-passcode-list {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pixelpass-passcode-row {
+  min-height: 96px;
+  display: grid;
+  grid-template-columns: 54px minmax(140px, 0.76fr) minmax(190px, 1fr) 54px 30px;
+  align-items: center;
+  gap: 15px;
+  box-sizing: border-box;
+  padding: 13px 14px;
+  color: #274d63;
+  border: 1px solid #a8bdc9;
+  box-shadow:
+    inset 0 1px #fff,
+    0 5px 14px rgba(32, 78, 102, 0.12);
+  background: linear-gradient(100deg, #fff, #eef7fb 64%, #e1f0f7);
+}
+
+.pixelpass-passcode-issuer {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  border: 1px solid #526f82;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.7),
+    0 3px 8px rgba(43, 74, 91, 0.22);
+  background: linear-gradient(#7897aa, #486b80 52%, #38586b);
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.tone-violet .pixelpass-passcode-issuer {
+  border-color: #654c72;
+  background: linear-gradient(#c69ad2, #825b91 52%, #684876);
+}
+
+.tone-blue .pixelpass-passcode-issuer {
+  border-color: #426f91;
+  background: linear-gradient(#75b9db, #347fa9 52%, #2a688f);
+}
+
+.tone-green .pixelpass-passcode-issuer {
+  border-color: #557c65;
+  background: linear-gradient(#8ec7a1, #4d9568 52%, #38794f);
+}
+
+.pixelpass-passcode-identity {
+  min-width: 0;
+}
+
+.pixelpass-passcode-identity strong,
+.pixelpass-passcode-identity span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pixelpass-passcode-identity strong {
+  color: #1d4c67;
+  font-size: 14px;
+}
+
+.pixelpass-passcode-identity span {
+  margin-top: 4px;
+  color: #5d727e;
+  font-size: 10px;
+}
+
+.win7 .pixelpass-passcode-value {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+  padding: 8px 13px;
+  color: #163f57;
+  text-align: center;
+  border-color: #85abc0;
+  background: linear-gradient(#fff, #edf6fa);
+  font-family: Consolas, "Courier New", monospace;
+  font-size: clamp(22px, 3vw, 31px);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+}
+
+.pixelpass-passcode-value small {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: #557180;
+  font-family: "Segoe UI", SegoeUI, Tahoma, sans-serif;
+  font-size: 8px;
+  letter-spacing: 0;
+}
+
+.pixelpass-passcode-value small svg {
+  width: 10px;
+  height: 10px;
+}
+
+.pixelpass-passcode-dial {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: #316d4a;
+  font-variant-numeric: tabular-nums;
+}
+
+.pixelpass-passcode-dial svg {
+  width: 48px;
+  height: 48px;
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.pixelpass-passcode-dial circle {
+  fill: none;
+  stroke-width: 3;
+}
+
+.pixelpass-dial-track {
+  stroke: #cddbd3;
+}
+
+.pixelpass-dial-progress {
+  stroke: #4b9c69;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 220ms linear;
+}
+
+.pixelpass-passcode-dial strong {
+  z-index: 1;
+  font-size: 12px;
+}
+
+.pixelpass-passcode-dial.is-expiring {
+  color: #9a5b18;
+}
+
+.pixelpass-passcode-dial.is-expiring .pixelpass-dial-track {
+  stroke: #e5d3bc;
+}
+
+.pixelpass-passcode-dial.is-expiring .pixelpass-dial-progress {
+  stroke: #c17a2c;
+}
+
+.win7 .pixelpass-passcode-remove {
+  width: 29px;
+  min-width: 29px;
+  height: 29px;
+  padding: 0;
+  color: #8c2e28;
+}
+
+.pixelpass-passcode-remove svg {
+  width: 14px;
+  height: 14px;
+}
+
+.pixelpass-passcode-form .pixelpass-form-note {
+  margin-left: 126px;
+}
+
+@media (max-width: 860px) {
+  .pixelpass-flow-window {
+    height: calc(100vh - 84px);
+    min-height: 0;
+  }
+
+  .pixelpass-choice-layout,
+  .pixelpass-unlock-layout {
+    grid-template-columns: minmax(230px, 0.75fr) minmax(330px, 1.25fr);
+  }
+
+  .pixelpass-choice-story,
+  .pixelpass-choice-actions,
+  .pixelpass-unlock-form {
+    padding: 32px;
+  }
+
+  .pixelpass-choice-story h1 {
+    font-size: 34px;
+  }
+
+  .pixelpass-image-strip {
+    grid-template-columns: repeat(5, minmax(82px, 1fr));
+    overflow-x: auto;
+  }
+
+  .pixelpass-passcode-row {
+    grid-template-columns: 48px minmax(110px, 0.7fr) minmax(170px, 1fr) 50px 28px;
+    gap: 9px;
+  }
+}
+
+@media (max-width: 650px) {
+  .pixelpass-choice-layout,
+  .pixelpass-unlock-layout,
+  .pixelpass-recovery-layout,
+  .pixelpass-seal-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pixelpass-choice-story,
+  .pixelpass-unlock-art {
+    min-height: 260px;
+    border-right: 0;
+    border-bottom: 1px solid #9bbdcc;
+  }
+
+  .pixelpass-choice-actions {
+    padding: 24px;
+  }
+
+  .pixelpass-source-rail {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .pixelpass-guided-flow {
+    padding: 18px;
+  }
+
+  .pixelpass-flow-progress li strong {
+    display: none;
+  }
+
+  .pixelpass-step-panel {
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .pixelpass-threshold-visual {
+    gap: 6px;
+  }
+
+  .pixelpass-threshold-visual > span {
+    width: 52px;
+    height: 68px;
+  }
+
+  .pixelpass-threshold-control {
+    grid-template-columns: 1fr 64px;
+  }
+
+  .pixelpass-threshold-control input {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .pixelpass-threshold-control > strong {
+    grid-column: 2;
+  }
+
+  .pixelpass-master-key-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .pixelpass-master-key-fields > small {
+    grid-column: 1;
+  }
+
+  .pixelpass-ceremony-steps {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pixelpass-passcode-row {
+    grid-template-columns: 45px minmax(0, 1fr) 48px 28px;
+  }
+
+  .pixelpass-passcode-value {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .pixelpass-passcode-explainer {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .pixelpass-passcode-explainer > div {
+    width: calc(100% - 42px);
+  }
+}
+
+@media (max-height: 700px) and (min-width: 651px) {
+  .pixelpass-guided-flow {
+    padding: 16px 40px 18px;
+  }
+
+  .pixelpass-flow-heading h1 {
+    font-size: 28px;
+  }
+
+  .pixelpass-flow-progress {
+    margin: 13px 0 11px;
+  }
+
+  .pixelpass-step-panel {
+    min-height: 0;
+    padding: 17px;
+  }
+
+  .pixelpass-source-rail {
+    margin: 13px 0 11px;
+  }
+
+  .pixelpass-image-strip {
+    min-height: 88px;
+  }
+
+  .pixelpass-image-tile {
+    height: 86px;
+  }
+
+  .pixelpass-threshold-visual {
+    gap: 9px;
+    margin: 12px 0 10px;
+  }
+
+  .pixelpass-threshold-visual > span {
+    width: 62px;
+    height: 64px;
+    flex-basis: 62px;
+  }
+
+  .pixelpass-threshold-visual svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .pixelpass-threshold-visual small {
+    margin-top: 4px;
+  }
+
+  .pixelpass-survival-note {
+    margin-top: 10px;
+    padding: 8px 12px;
+  }
+
+  .pixelpass-step-actions {
+    margin-top: 11px;
+    padding-top: 9px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pixelpass-share-flight span {
+    animation: none;
+    opacity: 1;
+    transform: translate(340px, var(--share-y, 0));
+  }
+
+  .pixelpass-dial-progress {
+    transition: none;
+  }
 }

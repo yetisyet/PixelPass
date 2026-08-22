@@ -1,5 +1,5 @@
-import { initAgent } from "https://cdn.jsdelivr.net/npm/clippyjs/dist/index.mjs";
-import * as agents from "https://cdn.jsdelivr.net/npm/clippyjs/dist/agents/index.mjs";
+const CLIPPY_MODULE_URL = "https://cdn.jsdelivr.net/npm/clippyjs/dist/index.mjs";
+const CLIPPY_AGENTS_URL = "https://cdn.jsdelivr.net/npm/clippyjs/dist/agents/index.mjs";
 
 function generateRandomBase64() {
   const bytes = new Uint8Array(18);
@@ -100,13 +100,39 @@ function createMessageBubble(target) {
 }
 
 async function initializeClippy() {
+  // Keep the assistant optional: a missing network connection must never stop
+  // the local vault UI from loading.
+  const [{ initAgent }, agents] = await Promise.all([
+    import(/* @vite-ignore */ CLIPPY_MODULE_URL),
+    import(/* @vite-ignore */ CLIPPY_AGENTS_URL),
+  ]);
   const agent = await initAgent(agents.Clippy);
   const replaceMessage = createMessageBubble(agent._el);
 
   agent.show();
-  replaceMessage(
-    "Hello! I'm Clippy, your virtual assistant. Click me for a secure password!",
+  agent._el.setAttribute(
+    "aria-label",
+    "Clippy password helper. Click to copy a generated secure password.",
   );
+  agent._el.title = "Click Clippy to copy a generated secure password";
+
+  // The welcome bubble obscures the primary cards at the app's default 800px width.
+  if (window.innerWidth >= 900) {
+    replaceMessage(
+      "Hello! I'm Clippy, your virtual assistant. Click me for a secure password!",
+    );
+  } else {
+    Object.assign(agent._el.style, {
+      position: "fixed",
+      top: "3px",
+      right: "auto",
+      bottom: "auto",
+      left: "166px",
+      zIndex: "10001",
+      transform: "scale(0.52)",
+      transformOrigin: "top left",
+    });
+  }
 
   agent._el.addEventListener("click", async () => {
     const randomString = generateBase64_24();

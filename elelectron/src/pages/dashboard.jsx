@@ -1,19 +1,22 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
+  BookOpen,
   Eye,
   FlaskConical,
   KeyRound,
+  Lock,
   LockKeyhole,
   PawPrint,
   Pencil,
   Plus,
   Search,
+  ShieldCheck,
   Star,
-  StickyNote,
   X,
 } from "lucide-react"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import background from "../lib/background.jpg"
+import PasscodeVault from "@/components/passcode_vault"
 import AddPasswordDialog from "@/components/ui/add_password"
 import EditPasswordDialog from "@/components/ui/edit_password"
 import PasswordRevealDialog from "@/components/ui/password_reveal"
@@ -61,58 +64,11 @@ function useDraggable(initialPos = { x: 0, y: 0 }) {
   return { pos, onMouseDown }
 }
 
-function PixelStarIcon(props) {
-  return (
-    <img
-      width="16"
-      height="16"
-      src="https://img.icons8.com/color/48/pixel-star.png"
-      alt="pixel-star"
-      {...props}
-    />
-  )
-}
-
-function KeySymbol(props) {
-  return (
-    <img
-      width="16"
-      height="16"
-      src="https://img.icons8.com/material-sharp/24/key--v2.png"
-      alt="key"
-      {...props}
-    />
-  )
-}
-
-function OpenBook(props) {
-  return (
-    <img
-      width="16"
-      height="16"
-      src="https://img.icons8.com/ios/50/open-book--v1.png"
-      alt="book"
-      {...props}
-    />
-  )
-}
-function NoteWriting(props) {
-  return (
-    <img
-      width="16"
-      height="16"
-      src="https://img.icons8.com/ios-glyphs/30/create-new.png"
-      alt="notes"
-      {...props}
-    />
-  )
-}
-
-
 const categories = [
-  { id: "all", label: "All items", Icon: OpenBook },
-  { id: "favorites", label: "Favorites", Icon: PixelStarIcon },
-  { id: "logins", label: "Logins", Icon: KeySymbol },
+  { id: "all", label: "All items", Icon: BookOpen },
+  { id: "favorites", label: "Favorites", Icon: Star },
+  { id: "logins", label: "Logins", Icon: KeyRound },
+  { id: "passcodes", label: "Passcodes", Icon: ShieldCheck },
 ]
 
 const demoEntries = [
@@ -212,6 +168,7 @@ function PasswordRow({ onEdit, onRemove, onView, password }) {
 }
 
 export default function Dashboard() {
+  const location = useLocation()
   const navigate = useNavigate()
   const { pos, onMouseDown } = useDraggable({ x: 0, y: 0 })
   const [activeCategory, setActiveCategory] = useState("all")
@@ -219,6 +176,7 @@ export default function Dashboard() {
   const [entryToEdit, setEntryToEdit] = useState(null)
   const [entryToRemove, setEntryToRemove] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [isAddPasscodeOpen, setIsAddPasscodeOpen] = useState(false)
   const [isDemoMode, setIsDemoMode] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -271,8 +229,12 @@ export default function Dashboard() {
   useEffect(() => {
     if (hasLoadedPasswords.current) return
     hasLoadedPasswords.current = true
+    if (location.state?.demoMode) {
+      loadDemoPasswords("Recovered demo vault opened from 3 image shares.")
+      return
+    }
     loadPasswords()
-  }, [loadPasswords])
+  }, [loadPasswords, location.state])
 
   const visiblePasswords = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -294,7 +256,7 @@ export default function Dashboard() {
   const activeCategoryLabel =
     categories.find(({ id }) => id === activeCategory)?.label ?? "All items"
 
-  function loadDemoPasswords() {
+  function loadDemoPasswords(message = "Demo paws loaded >w<") {
     listRequestId.current += 1
     setPasswords(demoEntries)
     setActiveCategory("all")
@@ -302,7 +264,7 @@ export default function Dashboard() {
     setIsDemoMode(true)
     setIsLoading(false)
     setSearch("")
-    setStatusMessage("demo paws loaded >w<")
+    setStatusMessage(typeof message === "string" ? message : "Demo paws loaded >w<")
   }
 
   async function openPassword(entry) {
@@ -488,6 +450,19 @@ export default function Dashboard() {
     navigate("/")
   }
 
+  function selectCategory(id) {
+    setActiveCategory(id)
+    if (id === "passcodes") {
+      setStatusMessage("Rolling passcodes are using frontend demo data.")
+    } else if (error) {
+      setStatusMessage("could not load the vault T~T")
+    } else if (isDemoMode) {
+      setStatusMessage("demo vault loaded >w<")
+    } else {
+      setStatusMessage("vault unlocked nyah ^w^")
+    }
+  }
+
   return (
       <main
         className="pixelpass-page pixelpass-home-page"
@@ -511,7 +486,7 @@ export default function Dashboard() {
           style={{ cursor: "grab" }}
         >
           <div className="title-bar-text">
-            PixelPass — {isDemoMode ? "Demo vault" : error ? "Vault connection" : "Unlocked vault"}
+            PixelPass — {activeCategory === "passcodes" ? "Authenticator demo" : isDemoMode ? "Demo vault" : error ? "Vault connection" : "Unlocked vault"}
           </div>
           <div
             className="title-bar-controls"
@@ -535,18 +510,22 @@ export default function Dashboard() {
                 Lock vault
               </button>
             </div>
-            <button className="default" type="button" onClick={() => setIsAddOpen(true)}>
+            <button
+              className="default"
+              type="button"
+              onClick={() => activeCategory === "passcodes" ? setIsAddPasscodeOpen(true) : setIsAddOpen(true)}
+            >
               <Plus aria-hidden="true" />
-              New item
+              {activeCategory === "passcodes" ? "Add passcode" : "New login"}
             </button>
           </div>
 
           <div className="pixelpass-explorer">
             <aside className="pixelpass-sidebar">
               <div className="pixelpass-sidebar-heading">
-                <img src="https://img.icons8.com/color/18/000000/remote-desktop.png" style={{ scale: "150%" }}/>
+                <LockKeyhole aria-hidden="true" />
                 <div>
-                  <strong>Saved passwords</strong>
+                  <strong>Encrypted vault</strong>
                   <span>
                     {passwords.length} {passwords.length === 1 ? "login" : "logins"}
                   </span>
@@ -562,7 +541,7 @@ export default function Dashboard() {
                     }`}
                     key={id}
                     type="button"
-                    onClick={() => setActiveCategory(id)}
+                    onClick={() => selectCategory(id)}
                   >
                     <Icon aria-hidden="true" />
                     {label}
@@ -571,11 +550,21 @@ export default function Dashboard() {
               </nav>
 
               <div className="pixelpass-sidebar-note">
-              <p>secrets stay covered until u click Reveal ^w^ <img width="16" height="16" src="https://img.icons8.com/forma-bold-filled/24/lock-2.png" alt="lock-2" style={{ marginLeft: "16em" }} /> </p>
+                <Lock aria-hidden="true" />
+                <p>Secrets stay covered until you choose Reveal. Passcodes roll without exposing their authenticator secret.</p>
               </div>
             </aside>
 
-            <section className="pixelpass-content" aria-labelledby="passwords-heading">
+            {activeCategory === "passcodes" ? (
+              <section className="pixelpass-content pixelpass-passcode-content">
+                <PasscodeVault
+                  addOpen={isAddPasscodeOpen}
+                  onAddOpenChange={setIsAddPasscodeOpen}
+                  onStatusChange={setStatusMessage}
+                />
+              </section>
+            ) : (
+              <section className="pixelpass-content" aria-labelledby="passwords-heading">
               <div className="pixelpass-content-header">
                 <div>
                   <h1 id="passwords-heading">{activeCategoryLabel}</h1>
@@ -670,7 +659,8 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-            </section>
+              </section>
+            )}
           </div>
         </div>
 
@@ -684,10 +674,12 @@ export default function Dashboard() {
             {statusMessage}
           </p>
           <p className="status-bar-field">
-            {visiblePasswords.length} of {passwords.length} items
+            {activeCategory === "passcodes"
+              ? "30-second TOTP"
+              : `${visiblePasswords.length} of ${passwords.length} items`}
           </p>
           <p className="status-bar-field">
-            {isDemoMode ? "Demo mode" : error ? "Offline" : "Unlocked"}
+            {activeCategory === "passcodes" ? "Demo data" : isDemoMode ? "Demo mode" : error ? "Offline" : "Unlocked"}
           </p>
         </div>
       </section>

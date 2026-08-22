@@ -1,5 +1,6 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { spawn } from 'node:child_process';
@@ -65,13 +66,26 @@ const getBackendPath = () => {
   return path.resolve(app.getAppPath(), '..', 'backend', 'main.py');
 };
 
+const getPythonCommand = () => {
+  if (process.env.PIXELPASS_PYTHON) return process.env.PIXELPASS_PYTHON;
+
+  if (!app.isPackaged) {
+    const virtualEnvironmentPython = process.platform === 'win32'
+      ? path.resolve(app.getAppPath(), '.venv', 'Scripts', 'python.exe')
+      : path.resolve(app.getAppPath(), '.venv', 'bin', 'python');
+
+    if (existsSync(virtualEnvironmentPython)) return virtualEnvironmentPython;
+  }
+
+  return process.platform === 'win32' ? 'python' : 'python3';
+};
+
 const startBackend = () => {
   if (backendProcess) return;
 
   backendStartupState = null;
   const backendPath = getBackendPath();
-  const pythonCommand = process.env.PIXELPASS_PYTHON
-    || (process.platform === 'win32' ? 'python' : 'python3');
+  const pythonCommand = getPythonCommand();
   const child = spawn(pythonCommand, ['-u', backendPath], {
     cwd: path.dirname(backendPath),
     stdio: ['pipe', 'pipe', 'pipe'],
