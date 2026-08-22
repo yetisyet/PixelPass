@@ -126,14 +126,19 @@ def startup():  # should return a config instance
     payload = {"mode": mode}
     print(json.dumps(payload))
     returnVal = json.loads(input())
+    mPassword = returnVal["password"]
     if mode == -1:
         vault = vault_manager.init_vault(
             returnVal["mode"], returnVal["majority"], returnVal["total"]
         )
         mode_populate(returnVal)
+        conf = get_config()
+        status_manager.save_vault(vault, conf, mPassword)
     else:
-        mPassword = returnVal["password"]
-    return get_config()
+        conf = get_config()
+    print(json.dumps({"status": True, "elecID": returnVal["elecID"]}))
+
+    return conf
 
 
 def get_config():
@@ -163,12 +168,6 @@ def mode_populate(returnVal):
 
 
 def main_server(config):
-    global mode
-    if mode == -1:
-        x = {"mode": 0}
-        print(json.dumps(x))
-        # ask the frontend
-        mode = json.loads(input())["mode"]
     while 1:  # add something
         usrInput = json.loads(input())
         action = usrInput["action"]

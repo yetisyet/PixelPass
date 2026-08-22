@@ -2,6 +2,16 @@
 from typing import TypedDict
 
 
+class Entry(TypedDict):
+    """class for holding the entries"""
+
+    id: int
+    service_name: str
+    username: str
+    password: str
+    is_fav: bool
+
+
 class Vault(TypedDict):
     total_images: int
     majority_images: int
@@ -9,13 +19,6 @@ class Vault(TypedDict):
     passcode_entries: list[dict]
     passkey_entries: list[dict]
 
-class Entry(TypedDict):
-    """class for holding the entries"""
-    id: int
-    service_name: str
-    username: str
-    password: str
-    is_fav: bool
 
 class StorageOptions(TypedDict):
     individual_passwords: bool
@@ -23,8 +26,8 @@ class StorageOptions(TypedDict):
     total: int
     read_only: bool
 
+
 class Config(TypedDict):
     mode: int
     pool: list[str]
     storage_options: StorageOptions
-
