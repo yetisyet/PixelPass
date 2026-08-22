@@ -5,11 +5,19 @@ import started from 'electron-squirrel-startup';
 import { spawn } from 'node:child_process';
 import { createInterface } from 'node:readline';
 
-const BACKEND_REQUEST_TIMEOUT_MS = 10_000;
+const BACKEND_READ_TIMEOUT_MS = 60_000;
+const BACKEND_WRITE_TIMEOUT_MS = 120_000;
+const BACKEND_STARTUP_TIMEOUT_MS = 300_000;
 const pendingBackendRequests = new Map();
 const pendingStartupRequests = new Set();
 let backendProcess = null;
 let backendStartupState = null;
+
+const getBackendRequestTimeout = (request) => {
+  if ([3, 4, 5].includes(request.action)) return BACKEND_WRITE_TIMEOUT_MS;
+  if ([1, 2].includes(request.action)) return BACKEND_READ_TIMEOUT_MS;
+  return BACKEND_STARTUP_TIMEOUT_MS;
+};
 
 const waitForBackendStartup = () => {
   if (backendStartupState) return Promise.resolve(backendStartupState);
@@ -49,19 +57,19 @@ const rejectAllBackendRequests = (error) => {
   }
 };
 
-const getDummyBackendPath = () => {
+const getBackendPath = () => {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, 'backend', 'dummy_main.py');
+    return path.join(process.resourcesPath, 'backend', 'main.py');
   }
 
-  return path.resolve(app.getAppPath(), '..', 'backend', 'dummy_main.py');
+  return path.resolve(app.getAppPath(), '..', 'backend', 'main.py');
 };
 
 const startBackend = () => {
   if (backendProcess) return;
 
   backendStartupState = null;
-  const backendPath = getDummyBackendPath();
+  const backendPath = getBackendPath();
   const pythonCommand = process.env.PIXELPASS_PYTHON
     || (process.platform === 'win32' ? 'python' : 'python3');
   const child = spawn(pythonCommand, ['-u', backendPath], {
@@ -189,14 +197,17 @@ ipcMain.handle('python:request', (_event, request) => {
   const elecID = randomUUID();
   const protocolRequest = { ...request, elecID };
   const protocolLine = `${JSON.stringify(protocolRequest)}\n`;
+  const timeoutMs = getBackendRequestTimeout(request);
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       rejectBackendRequest(
         elecID,
-        new Error(`Python backend request ${elecID} timed out.`),
+        new Error(
+          `Python backend request ${elecID} timed out after ${timeoutMs / 1000} seconds.`,
+        ),
       );
-    }, BACKEND_REQUEST_TIMEOUT_MS);
+    }, timeoutMs);
 
     pendingBackendRequests.set(elecID, { reject, resolve, timeout });
 

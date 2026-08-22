@@ -135,12 +135,28 @@ const demoEntries = [
 
 
 function normalizeEntries(entries) {
-  return entries.map((entry, index) => ({
-    id: entry.id ?? `${entry.serviceName}:${entry.username}:${index}`,
-    serviceName: String(entry.serviceName ?? "Unnamed service"),
-    username: String(entry.username ?? "No username"),
-    isFavorite: Boolean(entry.isFav),
-  }))
+  return entries.map((entry, index) => {
+    const id = entry.id ?? entry.Id
+
+    if (!Number.isInteger(id)) {
+      throw new Error(`Password entry ${index + 1} has an invalid ID.`)
+    }
+
+    return {
+      id,
+      serviceName: String(entry.serviceName ?? "Unnamed service"),
+      username: String(entry.username ?? "No username"),
+      isFavorite: Boolean(entry.isFav),
+    }
+  })
+}
+
+function nextPasswordId(entries) {
+  const numericIds = entries
+    .map((entry) => entry.id)
+    .filter((id) => Number.isInteger(id) && id >= 0)
+
+  return numericIds.length === 0 ? 1 : Math.max(...numericIds) + 1
 }
 
 function PasswordRow({ onEdit, onRemove, onView, password }) {
@@ -243,10 +259,10 @@ export default function Dashboard() {
       setStatusMessage("vault unlocked nyah ^w^")
     } catch (loadError) {
       if (requestId !== listRequestId.current) return
-      setPasswords(demoEntries)
-      setIsDemoMode(true)
+      setPasswords([])
+      setIsDemoMode(false)
       setError(loadError.message)
-      setStatusMessage("Backend is hiding T~T — demo paws loaded >w<")
+      setStatusMessage("could not load the vault T~T")
     } finally {
       if (requestId === listRequestId.current) setIsLoading(false)
     }
@@ -358,9 +374,11 @@ export default function Dashboard() {
       return
     }
 
+    const createdEntryId = nextPasswordId(passwords)
     const response = await sendBackendRequest({
       action: 3,
       data: {
+        id: createdEntryId,
         serviceName: values.serviceName,
         username: values.username,
         password: values.password,
@@ -370,11 +388,6 @@ export default function Dashboard() {
 
     if (!response.success) {
       throw new Error(response.error ?? "Failed to create password entry")
-    }
-
-    const createdEntryId = response.data?.id
-    if (createdEntryId === undefined || createdEntryId === null) {
-      throw new Error("The backend did not return the new entry ID.")
     }
 
     setPasswords((currentPasswords) => [
@@ -425,6 +438,7 @@ export default function Dashboard() {
         entry.id === entryToEdit.id
           ? {
               ...entry,
+              serviceName: values.serviceName,
               username: values.username,
               isFavorite: values.isFavorite,
               ...(isDemoMode ? { demoPassword: values.password } : {}),
@@ -482,7 +496,7 @@ export default function Dashboard() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-        }} 
+        }}
       >
       <section
         className="window active glass pixelpass-main-window"
