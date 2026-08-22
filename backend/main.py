@@ -12,7 +12,15 @@ from structs import Entry
 
 mode = -1
 
-
+"""
+    The check config function
+    Check if the config file exists and then
+    if no config file) the mode is 0 and then (not in this function) vault_init is called to start up
+    if there is a config file) sets the mode ( a global variable) to whatever is specified
+    this function does not take in anything, only sets the mode variable and returns nothing
+    if mode = -1 this means that there is no config file and hence vault_init needs to be called
+    if mode != -1, this means that there is a mode and it goes as normal. 
+"""
 def check_config():
     global mode
     try:
@@ -81,6 +89,14 @@ def remove_password(usrInput):
     print(json.dumps(payload))
 
 
+def startup():
+    global mode
+    payload = {"mode": mode}
+    print(json.dumps(payload))
+    returnVal = json.loads(input())
+    vault_manager.init_vault(returnVal["mode"], returnVal["password"], returnVal["recover_mode"])
+
+
 def edit_password(usrInput):
     thisEntry = Entry(
         usrInput["data"]["id"],
@@ -127,5 +143,5 @@ def main_server():
 # makes sure that it only runs when it is not called from another function, hence the __init__ thing
 if __name__ == "__main__":
     check_config()
-    # mode = vault_manager.check_config()
+    startup()
     main_server()
