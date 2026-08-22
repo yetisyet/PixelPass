@@ -1,19 +1,23 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   Eye,
   FlaskConical,
   KeyRound,
   LockKeyhole,
   PawPrint,
+  Pencil,
   Plus,
   Search,
   Star,
   StickyNote,
+  X,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 
 import AddPasswordDialog from "@/components/ui/add_password"
+import EditPasswordDialog from "@/components/ui/edit_password"
 import PasswordRevealDialog from "@/components/ui/password_reveal"
+import RemovePasswordDialog from "@/components/ui/remove_password"
 import { sendBackendRequest } from "@/lib/backend-client"
 
 const categories = [
@@ -25,12 +29,14 @@ const categories = [
 
 const demoEntries = [
   {
+    id: "demo-github",
     serviceName: "Demo GitHub",
     username: "demo@pixelpass.app",
     isFavorite: true,
     demoPassword: "demo-github-password-67",
   },
   {
+    id: "demo-discord",
     serviceName: "Demo Discord",
     username: "demo-user",
     isFavorite: false,
@@ -40,13 +46,14 @@ const demoEntries = [
 
 function normalizeEntries(entries) {
   return entries.map((entry, index) => ({
+    id: entry.id ?? `${entry.serviceName}:${entry.username}:${index}`,
     serviceName: String(entry.serviceName ?? "Unnamed service"),
     username: String(entry.username ?? "No username"),
-    isFavorite: Boolean(entry.isFavorite),
+    isFavorite: Boolean(entry.isFav),
   }))
 }
 
-function PasswordRow({ onView, password }) {
+function PasswordRow({ onEdit, onRemove, onView, password }) {
   return (
     <tr>
       <td>
@@ -64,10 +71,35 @@ function PasswordRow({ onView, password }) {
         )}
       </td>
       <td className="pixelpass-action-cell">
-        <button type="button" onClick={() => onView(password)}>
-          <Eye aria-hidden="true" />
-          Reveal
-        </button>
+        <div className="pixelpass-row-actions">
+          <button
+            aria-label={`Reveal password for ${password.serviceName}`}
+            className="pixelpass-reveal-button"
+            type="button"
+            onClick={() => onView(password)}
+          >
+            <Eye aria-hidden="true" />
+            <span className="pixelpass-action-label">Reveal</span>
+          </button>
+          <button
+            aria-label={`Edit ${password.serviceName}`}
+            className="pixelpass-edit-button"
+            type="button"
+            onClick={() => onEdit(password)}
+          >
+            <Pencil aria-hidden="true" />
+            <span className="pixelpass-action-label">Edit</span>
+          </button>
+          <button
+            aria-label={`Remove ${password.serviceName}`}
+            className="pixelpass-remove-button"
+            title="Remove login"
+            type="button"
+            onClick={() => onRemove(password)}
+          >
+            <X aria-hidden="true" />
+          </button>
+        </div>
       </td>
     </tr>
   )
@@ -77,10 +109,14 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [activeCategory, setActiveCategory] = useState("all")
   const [error, setError] = useState("")
+  const [entryToEdit, setEntryToEdit] = useState(null)
+  const [entryToRemove, setEntryToRemove] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isDemoMode, setIsDemoMode] = useState(false)
+  const [isEditOpen, setIsEditOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isRevealOpen, setIsRevealOpen] = useState(false)
+  const [isRemoveOpen, setIsRemoveOpen] = useState(false)
   const [isRevealing, setIsRevealing] = useState(false)
   const [passwords, setPasswords] = useState([])
   const [revealError, setRevealError] = useState("")
@@ -92,42 +128,44 @@ export default function Dashboard() {
   const listRequestId = useRef(0)
   const revealRequestId = useRef(0)
 
+  const loadPasswords = useCallback(async () => {
+    const requestId = ++listRequestId.current
+
+    try {
+      setIsLoading(true)
+      setError("")
+
+      const response = await sendBackendRequest({
+        action: 1,
+      })
+
+      if (!response.success) {
+        throw new Error(response.error ?? "The vault could not be loaded.")
+      }
+      if (!Array.isArray(response.data?.entries)) {
+        throw new Error("The backend returned an invalid password list.")
+      }
+      if (requestId !== listRequestId.current) return
+
+      setPasswords(normalizeEntries(response.data.entries))
+      setIsDemoMode(false)
+      setStatusMessage("vault unlocked nyah ^w^")
+    } catch (loadError) {
+      if (requestId !== listRequestId.current) return
+      setPasswords(demoEntries)
+      setIsDemoMode(true)
+      setError(loadError.message)
+      setStatusMessage("backend is hiding T~T — demo paws loaded >w<")
+    } finally {
+      if (requestId === listRequestId.current) setIsLoading(false)
+    }
+  }, [])
+
   useEffect(() => {
     if (hasLoadedPasswords.current) return
     hasLoadedPasswords.current = true
-    const requestId = ++listRequestId.current
-
-    async function loadPasswords() {
-      try {
-        setIsLoading(true)
-        setError("")
-
-        const response = await sendBackendRequest({
-          action: "retrieve_all_passwords",
-        })
-
-        if (!response.success) {
-          throw new Error(response.error ?? "The vault could not be loaded.")
-        }
-        if (!Array.isArray(response.data?.entries)) {
-          throw new Error("The backend returned an invalid password list.")
-        }
-        if (requestId !== listRequestId.current) return
-
-        setPasswords(normalizeEntries(response.data.entries))
-        setIsDemoMode(false)
-        setStatusMessage("vault unlocked nyah ^w^")
-      } catch (loadError) {
-        if (requestId !== listRequestId.current) return
-        setError(loadError.message)
-        setStatusMessage("backend is hiding T~T — demo still works")
-      } finally {
-        if (requestId === listRequestId.current) setIsLoading(false)
-      }
-    }
-
     loadPasswords()
-  }, [])
+  }, [loadPasswords])
 
   const visiblePasswords = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -175,9 +213,10 @@ export default function Dashboard() {
       }
 
       const response = await sendBackendRequest({
-        action: "retrieve_password",
-        serviceName: entry.serviceName,
-        username: entry.username,
+        action: 2,
+        data: {
+          id: entry.id,
+        },
       })
 
       if (!response.success) {
@@ -228,9 +267,111 @@ export default function Dashboard() {
       return
     }
 
-    throw new Error(
-      "the backend add-item action is not defined yet — Load demo to test it >w<",
+    const response = await sendBackendRequest({
+      action: 3,
+      data: {
+        serviceName: values.serviceName,
+        username: values.username,
+        password: values.password,
+        isFav: values.isFavorite,
+      },
+    })
+
+    if (!response.success) {
+      throw new Error(response.error ?? "Failed to create password entry")
+    }
+
+    const createdEntryId = response.data?.id
+    if (createdEntryId === undefined || createdEntryId === null) {
+      throw new Error("The backend did not return the new entry ID.")
+    }
+
+    setPasswords((currentPasswords) => [
+      {
+        id: createdEntryId,
+        serviceName: values.serviceName,
+        username: values.username,
+        isFavorite: values.isFavorite,
+      },
+      ...currentPasswords,
+    ])
+    setActiveCategory("all")
+    setStatusMessage("saved password nyah >///<")
+  }
+
+  function openEditDialog(entry) {
+    setEntryToEdit(entry)
+    setIsEditOpen(true)
+  }
+
+  function handleEditOpenChange(open) {
+    setIsEditOpen(open)
+    if (!open) setEntryToEdit(null)
+  }
+
+  async function editPassword(values) {
+    if (!entryToEdit) throw new Error("No login was selected.")
+
+    if (!isDemoMode) {
+      const response = await sendBackendRequest({
+        action: 5,
+        data: {
+          id: entryToEdit.id,
+          serviceName: values.serviceName,
+          username: values.username,
+          password: values.password,
+          isFav: values.isFavorite,
+        },
+      })
+
+      if (!response.success) {
+        throw new Error(response.error ?? "Failed to edit password entry")
+      }
+    }
+
+    setPasswords((currentPasswords) =>
+      currentPasswords.map((entry) =>
+        entry.id === entryToEdit.id
+          ? {
+              ...entry,
+              username: values.username,
+              isFavorite: values.isFavorite,
+              ...(isDemoMode ? { demoPassword: values.password } : {}),
+            }
+          : entry,
+      ),
     )
+    setStatusMessage("edited password nyah ^w^")
+  }
+
+  function openRemoveDialog(entry) {
+    setEntryToRemove(entry)
+    setIsRemoveOpen(true)
+  }
+
+  function handleRemoveOpenChange(open) {
+    setIsRemoveOpen(open)
+    if (!open) setEntryToRemove(null)
+  }
+
+  async function removePassword(entry) {
+    if (!isDemoMode) {
+      const response = await sendBackendRequest({
+        action: 4,
+        data: {
+          id: entry.id,
+        },
+      })
+
+      if (!response.success) {
+        throw new Error(response.error ?? "Failed to remove password entry")
+      }
+    }
+
+    setPasswords((currentPasswords) =>
+      currentPasswords.filter((password) => password.id !== entry.id),
+    )
+    setStatusMessage("removed password from ur vault T~T")
   }
 
   function lockVault() {
@@ -313,26 +454,45 @@ export default function Dashboard() {
               <div className="pixelpass-content-header">
                 <div>
                   <h1 id="passwords-heading">{activeCategoryLabel}</h1>
-                  <p>
+                  <p aria-live="polite">
                     {visiblePasswords.length} visible {visiblePasswords.length === 1 ? "item" : "items"}
                   </p>
                 </div>
 
-                <label className="pixelpass-search" htmlFor="vault-search">
-                  <Search aria-hidden="true" />
+                <div className="pixelpass-search">
+                  <label className="sr-only" htmlFor="vault-search">
+                    Search this vault
+                  </label>
+                  <Search aria-hidden="true" className="pixelpass-search-icon" />
                   <input
+                    aria-controls="password-list"
                     id="vault-search"
-                    placeholder="Search ur vault nyah…"
-                    type="search"
+                    placeholder="Search ur vault"
+                    role="searchbox"
+                    type="text"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
                   />
                   <PawPrint aria-hidden="true" className="pixelpass-search-paw" />
-                  <span className="sr-only">Search this vault</span>
-                </label>
+                </div>
               </div>
 
-              <div className="pixelpass-list-frame">
+              {error && isDemoMode && (
+                <div className="pixelpass-offline-notice" role="status">
+                  <PawPrint aria-hidden="true" />
+                  <div>
+                    <strong>backend is hiding T~T</strong>
+                    <span>
+                      demo data is loaded, so tabs and search still work nyah ^w^
+                    </span>
+                  </div>
+                  <button type="button" onClick={loadPasswords}>
+                    Retry backend
+                  </button>
+                </div>
+              )}
+
+              <div className="pixelpass-list-frame" id="password-list">
                 {isLoading ? (
                   <div className="pixelpass-loading" aria-busy="true">
                     <PawPrint aria-hidden="true" />
@@ -357,7 +517,7 @@ export default function Dashboard() {
                           <th scope="col">Service</th>
                           <th scope="col">Username</th>
                           <th scope="col">Favorite</th>
-                          <th scope="col">Action</th>
+                          <th scope="col">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -365,6 +525,8 @@ export default function Dashboard() {
                           <PasswordRow
                             key={password.id}
                             password={password}
+                            onEdit={openEditDialog}
+                            onRemove={openRemoveDialog}
                             onView={openPassword}
                           />
                         ))}
@@ -417,6 +579,18 @@ export default function Dashboard() {
         open={isAddOpen}
         onCreate={createPassword}
         onOpenChange={setIsAddOpen}
+      />
+      <EditPasswordDialog
+        entry={entryToEdit}
+        open={isEditOpen}
+        onOpenChange={handleEditOpenChange}
+        onSave={editPassword}
+      />
+      <RemovePasswordDialog
+        entry={entryToRemove}
+        open={isRemoveOpen}
+        onConfirm={removePassword}
+        onOpenChange={handleRemoveOpenChange}
       />
     </main>
   )
