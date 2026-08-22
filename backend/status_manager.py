@@ -1,5 +1,6 @@
 from stegano import lsb
 from crypto_manager import collect_data, distribute_data
+from structs import Vault, Config, StorageOptions
 import json
 
 """
@@ -28,19 +29,19 @@ Vault schema:
 """
 
 
-def save_vault(vault: object, config, password) -> int:
+def save_vault(vault: Vault, config: Config, password: str) -> int:
     """
     Takes a vault configuration and saves it to the pool depending on storage modes.
     REQUIRES !read_only
     """
 
     pool = config['pool']
-    storage_config = config['storage_options']
+    storage_config: StorageOptions = config['storage_options']
     read_only = storage_config['read_only']
     individual_passwords = storage_config['individual_passwords']
     majority = storage_config['majority']
 
-    if not read_only:
+    if read_only:
         return 1
 
     if not individual_passwords:
@@ -55,13 +56,13 @@ def save_vault(vault: object, config, password) -> int:
     
     return 0
 
-def load_vault(config, password) -> object:
+def load_vault(config: Config, password: str) -> Vault:
     """
     Takes a pool and storage mode and generates a vault configuration.
     """
 
     pool = config['pool']
-    storage_config = config['storage_options']
+    storage_config: StorageOptions = config['storage_options']
     individual_passwords = storage_config['individual_passwords']
 
     shamirs = []
