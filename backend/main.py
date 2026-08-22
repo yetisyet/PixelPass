@@ -129,7 +129,7 @@ def startup():  # should return a config instance
     mPassword = returnVal["password"]
     if mode == -1:
         vault = vault_manager.init_vault(
-            returnVal["mode"], returnVal["majority"], returnVal["total"]
+            returnVal["mode"], returnVal["total"], returnVal["majority"]
         )
         mode_populate(returnVal)
         conf = get_config()

@@ -5,6 +5,7 @@ from PIL import Image
 import os
 import zipfile
 from typing import TypedDict
+from pathlib import Path
 
 config_file = "config.json"
 
@@ -130,13 +131,15 @@ def init_vault(mode: int, total: int, majority: int):
 
     return initial
 
+def get_pool_from_folder(folder: str) -> list[str]:
+    return [str(path) for path in Path(folder).rglob("*.png")]
 
 def populate_vault_path_images(folders: list[str]):
     """this is like a list of file paths that we make our pool from"""
 
     try:
         config = open(config_file)
-        settings = json.load(config.read())
+        settings = json.load(config)
         config.close()
         # checking everything is a png
         non_image_count = 0
@@ -153,7 +156,7 @@ def populate_vault_path_images(folders: list[str]):
 
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
-        set_total(folders.count)
+        set_total(len(folders))
     except:
         return -1
     return 0
@@ -164,9 +167,12 @@ def populate_vault_path_folder(path: str):
 
     try:
         config = open(config_file)
-        settings = json.load(config.read())
+        settings = json.load(config)
         config.close()
-        dir = os.listdir("path")
+
+        """
+        dir = os.listdir(path)
+        print(dir)
 
         # check the path has only images
         image_count = 0
@@ -180,13 +186,18 @@ def populate_vault_path_folder(path: str):
                     non_image_count += 1
         if non_image_count != 0:
             return -1
+        """
 
-        settings["pool"] = [path]
+        dir = get_pool_from_folder(path)
+        image_count = len(dir)
+
+        settings["pool"] = dir # [path]
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
+
         set_total(image_count)
         return 0
-    except:
+    except Exception as e:
         return -1
 
 
@@ -194,18 +205,19 @@ def populate_vault_raw(images: list[Image]):
     """this is user provided images, from ctrl v from frontend"""
     try:
         config = open(config_file)
-        settings = json.load(config.read())
+        settings = json.load(config)
         config.close()
-        if os.path.exists("images"):
+        if not os.path.exists("images"):
             os.mkdir("images")
 
         for image in images:
             image.save("images/" + image.filename)
 
-        settings["pool"] = ["images"]
+        settings["pool"] = get_pool_from_folder("images")
+
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
-        set_total(images.count)
+        set_total(len(images))
         return 0
     except:
         return -1
@@ -213,19 +225,31 @@ def populate_vault_raw(images: list[Image]):
 
 def populate_vault_self():
     """this is where we can choose what to use, maybe pull images from internet"""
-    os.mkdir("images")
+    if not os.path.exists("images"):
+        os.mkdir("images")
     with zipfile.ZipFile("photos.zip") as zip_ref:
         zip_ref.extractall("images")
-    set_total(24)
+
+    pool = get_pool_from_folder("images")
+    set_total(len(pool))
+
+    config = open(config_file)
+    settings = json.load(config)
+    config.close()
+
+    settings['pool'] = pool
+
+    with open(config_file, "w") as config:
+        config.write(json.dumps(settings))
     return 0
 
 
 def set_majority(num: int):
     try:
         config = open(config_file)
-        settings = json.load(config.read())
+        settings = json.loads(config.read())
         config.close()
-        settings["StorageOptions"]["majority"] = num
+        settings["storage_options"]["majority"] = num
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
     except:
@@ -235,10 +259,10 @@ def set_majority(num: int):
 def set_total(num: int):
     try:
         config = open(config_file)
-        settings = json.load(config.read())
+        settings = json.loads(config.read())
         config.close()
-        settings["StorageOptions"]["total"] = num
+        settings["storage_options"]["total"] = num
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
-    except:
+    except Exception as e:
         return -1
