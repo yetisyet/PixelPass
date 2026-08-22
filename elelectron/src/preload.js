@@ -2,6 +2,9 @@ import { contextBridge, ipcRenderer } from "electron"
 
 contextBridge.exposeInMainWorld("pixelPassBackend", {
   copyText: (text) => ipcRenderer.invoke("clipboard:write", String(text)),
+  selectDirectory: () => ipcRenderer.invoke("dialog:select-directory"),
+  selectImagePaths: () => ipcRenderer.invoke("dialog:select-image-paths"),
+  startup: () => ipcRenderer.invoke("python:startup"),
   request: async (request) => {
     try {
       return await ipcRenderer.invoke("python:request", request)

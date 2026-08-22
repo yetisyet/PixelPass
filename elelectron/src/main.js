@@ -1,4 +1,4 @@
-import { app, BrowserWindow, clipboard, ipcMain } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron';
 import { randomUUID } from 'node:crypto';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
@@ -7,7 +7,32 @@ import { createInterface } from 'node:readline';
 
 const BACKEND_REQUEST_TIMEOUT_MS = 10_000;
 const pendingBackendRequests = new Map();
+const pendingStartupRequests = new Set();
 let backendProcess = null;
+let backendStartupState = null;
+
+const waitForBackendStartup = () => {
+  if (backendStartupState) return Promise.resolve(backendStartupState);
+
+  return new Promise((resolve, reject) => {
+    pendingStartupRequests.add({ reject, resolve });
+  });
+};
+
+const resolveBackendStartup = (startupState) => {
+  backendStartupState = startupState;
+  for (const pendingRequest of pendingStartupRequests) {
+    pendingRequest.resolve(startupState);
+  }
+  pendingStartupRequests.clear();
+};
+
+const rejectBackendStartup = (error) => {
+  for (const pendingRequest of pendingStartupRequests) {
+    pendingRequest.reject(error);
+  }
+  pendingStartupRequests.clear();
+};
 
 const rejectBackendRequest = (elecID, error) => {
   const pendingRequest = pendingBackendRequests.get(elecID);
@@ -35,6 +60,7 @@ const getDummyBackendPath = () => {
 const startBackend = () => {
   if (backendProcess) return;
 
+  backendStartupState = null;
   const backendPath = getDummyBackendPath();
   const pythonCommand = process.env.PIXELPASS_PYTHON
     || (process.platform === 'win32' ? 'python' : 'python3');
@@ -63,6 +89,20 @@ const startBackend = () => {
       return;
     }
 
+    if (
+      Number.isInteger(response.mode)
+      && response.mode >= 0
+      && response.mode <= 5
+      && response.elecID === undefined
+      && response.action === undefined
+    ) {
+      resolveBackendStartup({
+        configured: response.mode !== 0,
+        mode: response.mode,
+      });
+      return;
+    }
+
     const pendingRequest = pendingBackendRequests.get(response.elecID);
     if (!pendingRequest) {
       console.error('Python backend returned an unknown elecID.');
@@ -81,15 +121,16 @@ const startBackend = () => {
 
   child.on('error', (error) => {
     console.error('Could not start the Python backend:', error);
+    rejectBackendStartup(error);
     rejectAllBackendRequests(error);
   });
 
   child.on('close', (code) => {
     outputLines.close();
     if (backendProcess === child) backendProcess = null;
-    rejectAllBackendRequests(
-      new Error(`Python backend stopped unexpectedly with exit code ${code}.`),
-    );
+    const error = new Error(`Python backend stopped unexpectedly with exit code ${code}.`);
+    rejectBackendStartup(error);
+    rejectAllBackendRequests(error);
   });
 };
 
@@ -108,6 +149,32 @@ if (started) {
 ipcMain.handle('clipboard:write', (_event, text) => {
   clipboard.writeText(String(text));
   return true;
+});
+
+ipcMain.handle('python:startup', () => waitForBackendStartup());
+
+ipcMain.handle('dialog:select-directory', async () => {
+  const selection = await dialog.showOpenDialog({
+    properties: ['openDirectory'],
+    title: 'Choose the PixelPass image directory',
+  });
+
+  return selection.canceled ? null : selection.filePaths[0];
+});
+
+ipcMain.handle('dialog:select-image-paths', async () => {
+  const selection = await dialog.showOpenDialog({
+    filters: [
+      {
+        name: 'Images',
+        extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'],
+      },
+    ],
+    properties: ['openFile', 'multiSelections'],
+    title: 'Choose PixelPass seed images',
+  });
+
+  return selection.canceled ? [] : selection.filePaths;
 });
 
 ipcMain.handle('python:request', (_event, request) => {
