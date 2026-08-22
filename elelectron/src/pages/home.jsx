@@ -60,6 +60,7 @@ const METHOD_TO_MODE = {
     "Custom Directory": 2,
     "Image/s Upload": 3,
     "Randomly Selected": 4,
+    "Recovery Mode": 5,
 }
 
 function pastedImagePayload(dataUrl) {
@@ -158,8 +159,10 @@ export default function Home() {
     const [backendMode, setBackendMode] = useState(null)
     const [isBackendLoading, setIsBackendLoading] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [majority, setMajority] = useState("20")
     const [startupError, setStartupError] = useState("")
     const [statusMessage, setStatusMessage] = useState("checking backend config…")
+    const [total, setTotal] = useState("24")
     const masterkeyRegex =
         /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/
 
@@ -200,15 +203,15 @@ export default function Home() {
     const { pos: noConfigPos, onMouseDown: onNoConfigMouseDown } =
         useDraggable({ x: -260, y: 130 })
 
-    function initializationSource() {
+    function initializationData() {
         const selectedMode = METHOD_TO_MODE[avatarMethod]
 
-        if (selectedMode === 1) {
+        if (selectedMode === 1 || selectedMode === 5) {
             const image = pastedImagePayload(pastedImage)
             if (!image) throw new Error("Paste an image before initializing.")
             return {
-                mode: selectedMode,
-                source: { type: "uploadedImages", images: [image] },
+                Data: [image],
+                Mode: selectedMode,
             }
         }
 
@@ -217,11 +220,8 @@ export default function Home() {
                 throw new Error("Choose or enter a valid directory path.")
             }
             return {
-                mode: selectedMode,
-                source: {
-                    type: "directory",
-                    directoryPath: customDirPath,
-                },
+                Mode: selectedMode,
+                Path: customDirPath,
             }
         }
 
@@ -230,19 +230,13 @@ export default function Home() {
                 throw new Error("Choose at least one image path.")
             }
             return {
-                mode: selectedMode,
-                source: {
-                    type: "imagePaths",
-                    imagePaths: uploadedFiles,
-                },
+                Mode: selectedMode,
+                Paths: uploadedFiles,
             }
         }
 
         if (selectedMode === 4) {
-            return {
-                mode: selectedMode,
-                source: { type: "selfPopulate" },
-            }
+            return { Mode: selectedMode }
         }
 
         throw new Error("Choose a vault avatar method first.")
@@ -268,16 +262,29 @@ export default function Home() {
             setIsSubmitting(true)
             let response
 
-            if (backendMode === 0) {
-                const selected = initializationSource()
+            if (backendMode === -1) {
+                const initialization = initializationData()
+                const parsedMajority = Number(majority)
+                const parsedTotal = Number(total)
+
+                if (!Number.isInteger(parsedMajority) || parsedMajority < 1) {
+                    throw new Error("Majority must be a positive whole number.")
+                }
+                if (!Number.isInteger(parsedTotal) || parsedTotal < 1) {
+                    throw new Error("Total must be a positive whole number.")
+                }
+                if (parsedTotal > 24) {
+                    throw new Error("Total cannot exceed 24.")
+                }
+                if (parsedMajority > parsedTotal) {
+                    throw new Error("Majority cannot be greater than Total.")
+                }
 
                 response = await sendBackendRequest({
-                    action: "initialize",
-                    data: {
-                        mode: selected.mode,
-                        source: selected.source,
-                        vaultPassword: masterkey,
-                    },
+                    ...initialization,
+                    Majority: parsedMajority,
+                    Password: masterkey,
+                    Total: parsedTotal,
                 })
             } else {
                 response = await sendBackendRequest({
@@ -291,8 +298,8 @@ export default function Home() {
             }
 
             console.info(
-                backendMode === 0
-                    ? `works — initialized mode ${response.data?.mode}`
+                backendMode === -1
+                    ? `works — initialized mode ${response.Mode}`
                     : `works — config found for mode ${backendMode}`
             )
             setStatusMessage("works — backend received the request ^w^")
@@ -338,7 +345,7 @@ export default function Home() {
         } else if (value === "Image/s Upload") {
             setShowUploadWindow(true)
             setUploadMinimized(false)
-        } else if (value === "Paste Image") {
+        } else if (value === "Paste Image" || value === "Recovery Mode") {
             setShowPasteWindow(true)
             setPasteMinimized(false)
         } else if (value === "Randomly Selected") {
@@ -354,20 +361,25 @@ export default function Home() {
         async function receiveStartupMode() {
             try {
                 const startup = await window.pixelPassBackend?.startup?.()
-                if (!startup || !Number.isInteger(startup.mode)) {
+                if (
+                    !startup ||
+                    !Number.isInteger(startup.mode) ||
+                    (startup.mode !== -1 &&
+                        (startup.mode < 1 || startup.mode > 5))
+                ) {
                     throw new Error("Backend returned an invalid startup mode.")
                 }
                 if (!active) return
 
                 setBackendMode(startup.mode)
-                setShowNoConfigWindow(startup.mode === 0)
+                setShowNoConfigWindow(startup.mode === -1)
                 setStatusMessage(
-                    startup.mode === 0
+                    startup.mode === -1
                         ? "no config found — initialization required"
                         : `config found — mode ${startup.mode}`
                 )
 
-                if (startup.mode !== 0) {
+                if (startup.mode !== -1) {
                     console.info(`Config found — mode ${startup.mode}`)
                 }
             } catch (error) {
@@ -453,7 +465,7 @@ export default function Home() {
 
                             {!isBackendLoading && !startupError && backendMode !== null && (
                                 <p className="text-sm" role="status">
-                                    {backendMode === 0
+                                    {backendMode === -1
                                         ? "No config found — choose an initialization method below."
                                         : `Config found — mode ${backendMode}. Enter your masterkey to continue.`}
                                 </p>
@@ -540,46 +552,91 @@ export default function Home() {
                                     )}
                                 </div>
 
-                                {backendMode === 0 && (
-                                <div className="space-y-2">
-                                    <label
-                                        htmlFor="avatar-method"
-                                        className="text-sm font-medium"
-                                        style={{ display: "block" }}
+                                {backendMode === -1 && (
+                                    <div
+                                        className="space-y-2"
+                                        style={{
+                                            display: "grid",
+                                            gridTemplateColumns: "1fr 1fr",
+                                            gap: 8,
+                                        }}
                                     >
-                                        Vault avatar
-                                    </label>
-                                    <select
-                                        id="avatar-method"
-                                        value={avatarMethod}
-                                        onChange={handleAvatarMethodChange}
-                                    >
-                                        <option value="N/A">N/A</option>
-                                        <option value="Paste Image">
-                                            Paste Image
-                                        </option>
-                                        <option value="Custom Directory">
-                                            Custom Directory
-                                        </option>
-                                        <option value="Image/s Upload">
-                                            Image/s Upload
-                                        </option>
-                                        <option value="Randomly Selected">
-                                            Randomly Selected
-                                        </option>
-                                    </select>
-                                    {avatarPath && (
-                                        <p
-                                            className="text-sm"
-                                            style={{
-                                                overflowWrap: "break-word",
-                                                wordBreak: "break-word",
-                                            }}
+                                        <label className="text-sm font-medium">
+                                            Majority
+                                            <input
+                                                disabled={isSubmitting}
+                                                max="24"
+                                                min="1"
+                                                required
+                                                type="number"
+                                                value={majority}
+                                                onChange={(event) =>
+                                                    setMajority(event.target.value)
+                                                }
+                                                style={{ display: "block", width: "100%" }}
+                                            />
+                                        </label>
+                                        <label className="text-sm font-medium">
+                                            Total
+                                            <input
+                                                disabled={isSubmitting}
+                                                max="24"
+                                                min="1"
+                                                required
+                                                type="number"
+                                                value={total}
+                                                onChange={(event) =>
+                                                    setTotal(event.target.value)
+                                                }
+                                                style={{ display: "block", width: "100%" }}
+                                            />
+                                        </label>
+                                    </div>
+                                )}
+
+                                {backendMode === -1 && (
+                                    <div className="space-y-2">
+                                        <label
+                                            htmlFor="avatar-method"
+                                            className="text-sm font-medium"
+                                            style={{ display: "block" }}
                                         >
-                                            Path: {avatarPath}
-                                        </p>
-                                    )}
-                                </div>
+                                            Vault avatar
+                                        </label>
+                                        <select
+                                            id="avatar-method"
+                                            value={avatarMethod}
+                                            onChange={handleAvatarMethodChange}
+                                        >
+                                            <option value="N/A">N/A</option>
+                                            <option value="Paste Image">
+                                                Paste Image
+                                            </option>
+                                            <option value="Custom Directory">
+                                                Custom Directory
+                                            </option>
+                                            <option value="Image/s Upload">
+                                                Image/s Upload
+                                            </option>
+                                            <option value="Randomly Selected">
+                                                Randomly Selected
+                                            </option>
+                                            <option value="Recovery Mode">
+                                                Recovery Mode
+                                            </option>
+                                        </select>
+                                        {avatarPath && (
+                                            <p
+                                                className="text-sm"
+                                                style={{
+                                                    overflowWrap: "break-word",
+                                                    wordBreak: "break-word",
+                                                }}
+                                            >
+                                                Path: {avatarPath}
+                                            </p>
+                                        )}
+                                    </div>
                                 )}
 
                                 <div className="pixelpass-home-actions">
@@ -591,7 +648,7 @@ export default function Home() {
                                         <KeyRound aria-hidden="true" />
                                         {isSubmitting
                                             ? "Sending…"
-                                            : backendMode === 0
+                                            : backendMode === -1
                                                 ? "Initialize the vault"
                                                 : "Open the vault >w<"}
                                     </button>
@@ -627,7 +684,7 @@ export default function Home() {
                     width={360}
                     statusBar={
                         <p className="status-bar-field">
-                            backend returned mode 0
+                            backend returned mode -1
                         </p>
                     }
                 >
@@ -642,6 +699,7 @@ export default function Home() {
                             <li>Custom Directory — mode 2</li>
                             <li>Image/s Upload — mode 3</li>
                             <li>Randomly Selected — mode 4</li>
+                            <li>Recovery Mode — mode 5</li>
                         </ul>
                         <button
                             className="default"
