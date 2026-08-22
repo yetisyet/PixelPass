@@ -2,7 +2,6 @@
 import json
 import base64
 from io import BytesIO
-
 import vault_manager
 import status_manager
 from structs import Vault, Entry, Config
