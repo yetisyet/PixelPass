@@ -38,11 +38,12 @@ def check_config():
                 mode = -1
     except:  # mode hasn't been detected
         mode = -1  # remove this and replace it with the return val above
-    startup()
+    return startup()
 
 
-def retrieve_all_pass_ent(usrInput):
-    passwords = vault_manager.get_services()  # passwords is a list of Entry structs TODO:
+def retrieve_all_pass_ent(usrInput, config):
+    global mPassword
+    passwords = vault_manager.get_services(config, mPassword)  # passwords is a list of Entry struct
     payload = {
         "elecID": usrInput["elecID"],
         "action": 1,
@@ -50,10 +51,10 @@ def retrieve_all_pass_ent(usrInput):
         "data": {
             "entries": [
                 {
-                    "id": entry.id,
-                    "serviceName": entry.service_name,
-                    "username": entry.username,
-                    "isFav": entry.is_fav,
+                    "id": entry["id"],
+                    "serviceName": entry["service_name"],
+                    "username": entry["username"],
+                    "isFav": entry["is_fav"],
                 }
                 for entry in passwords
             ]
@@ -63,8 +64,9 @@ def retrieve_all_pass_ent(usrInput):
     print(json.dumps(payload))
 
 
-def reveal_password(usrInput):
-    password = vault_manager.get_password(usrInput["data"]["id"]) # TODO:
+def reveal_password(usrInput, config):
+    global mPassword
+    password = vault_manager.get_password(usrInput["data"]["id"], config, mPassword) 
     payload = {
         "elecID": usrInput["elecID"],
         "action": 2,
@@ -74,7 +76,8 @@ def reveal_password(usrInput):
     print(json.dumps(payload))
 
 
-def create_password(usrInput):
+def create_password(usrInput, config):
+    global mPassword
     thisEntry = Entry(
         id=usrInput["data"]["id"],
         service_name=usrInput["data"]["serviceName"],
@@ -82,20 +85,22 @@ def create_password(usrInput):
         password=usrInput["data"]["password"],
         is_fav=usrInput["data"]["isFav"],
     )
-    vault_manager.add_entry(thisEntry)# TODO:
+    vault_manager.add_entry(thisEntry, config, mPassword)
     payload = {"elecID": usrInput["elecID"], "action": 3, "success": True}
     print(json.dumps(payload))
 
 
-def remove_password(usrInput):
-    status = vault_manager.remove_entry(usrInput["data"]["id"]) #TODO:
+def remove_password(usrInput, config):
+    global mPassword
+    status = vault_manager.remove_entry(usrInput["data"]["id"], config, mPassword)
     if status == 0:
         payload = {"elecID": usrInput["elecID"], "action": 4, "success": True}
     else:
         payload = {"elecID": usrInput["elecID"], "action": 4, "success": False}
     print(json.dumps(payload))
 
-def edit_password(usrInput):
+def edit_password(usrInput, config):
+    global mPassword
     thisEntry = Entry(
         id=usrInput["data"]["id"],
         service_name=usrInput["data"]["serviceName"],
@@ -103,7 +108,7 @@ def edit_password(usrInput):
         password=usrInput["data"]["password"],
         is_fav=usrInput["data"]["isFav"],
     )
-    status = vault_manager.add_entry(thisEntry) #TODO:
+    status = vault_manager.add_entry(thisEntry, config, mPassword)
     if status == 0:
         payload = {"action": 5, "success": True}
     else:
@@ -142,7 +147,7 @@ def mode_populate(returnVal):
 
 
 
-def main_server():
+def main_server(config):
     global mode
     if mode == -1:
         x = {"mode": 0}
@@ -154,20 +159,20 @@ def main_server():
         action = usrInput["action"]
         match action:
             case 1:
-                retrieve_all_pass_ent(usrInput)
+                retrieve_all_pass_ent(usrInput, config)
             case 2:
-                reveal_password(usrInput)
+                reveal_password(usrInput, config)
             case 3:
-                create_password(usrInput)
+                create_password(usrInput, config)
             case 4:
-                remove_password(usrInput)
+                remove_password(usrInput, config)
             case 5:
-                edit_password(usrInput)
+                edit_password(usrInput, config)
             case _:
                 print("ERR, unknown operation")  # REALLY shouldn't happen!!
 
 
 # makes sure that it only runs when it is not called from another function, hence the __init__ thing
 if __name__ == "__main__":
-    check_config()
-    main_server()
+    config = check_config()
+    main_server(config)
