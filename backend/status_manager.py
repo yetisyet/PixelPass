@@ -2,6 +2,9 @@ from stegano import lsb
 from crypto_manager import collect_data, distribute_data
 from structs import Vault, Config, StorageOptions
 import json
+from pathlib import Path
+from PIL import Image
+import os
 
 """
 Vault schema:
@@ -50,7 +53,20 @@ def save_vault(vault: Vault, config: Config, password: str) -> int:
 
         assert len(distributed_vault) == len(pool)
         for i, path in enumerate(pool):
-            lsb.hide(path, distributed_vault[i].hex()).save(path)
+            original = Path(path)
+            temp = original.with_name(f".{original.name}.tmp")
+
+            encoded = lsb.hide(path, distributed_vault[i].hex(), auto_convert_rgb=True)
+
+            try:
+                encoded.save(temp, format="PNG")
+
+                with Image.open(temp) as image:
+                    image.verify()
+                os.replace(temp, original)
+            finally:
+                if temp.exists():
+                    temp.unlink()
     else:
         raise NotImplemented
     
