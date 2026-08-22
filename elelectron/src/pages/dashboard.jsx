@@ -72,7 +72,6 @@ const categories = [
   { id: "all", label: "All items", Icon: OpenBook },
   { id: "favorites", label: "Favorites", Icon: PixelStarIcon },
   { id: "logins", label: "Logins", Icon: KeySymbol },
-  { id: "secure-notes", label: "Secure notes", Icon: NoteWriting },
 ]
 
 const demoEntries = [
