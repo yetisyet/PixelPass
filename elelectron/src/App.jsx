@@ -1,6 +1,6 @@
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom"
 import { HomeIcon, KeyRound, PawPrint } from "lucide-react"
-import logo from "./lib/logo.png"
+
 import Dashboard from "@/pages/dashboard"
 import Home from "@/pages/home"
 import NotFound from "@/pages/notfound"
@@ -18,7 +18,9 @@ export default function App() {
     <div className="win7 pixelpass-desktop">
       <nav aria-label="Primary" className="pixelpass-global-nav">
         <div className="pixelpass-brand">
-          <img src={logo} aria-hidden="true" style={{ width: 50, height: 50, objectFit: "contain" }}></img>
+          <span className="pixelpass-brand-icon" aria-hidden="true">
+            <PawPrint />
+          </span>
           <span>
             <strong>PixelPass</strong>
             <small>meow edition ^w^</small>
