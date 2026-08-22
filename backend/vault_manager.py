@@ -7,8 +7,25 @@ import zipfile
 
 config_file = "config.json"
 
-def store_master_password(master_password):
-    """Store in memory somewhere"""
+def check_master_password(config: Config, password: str):
+    """
+    We check the master password is accurate, and then set the 
+    majority and totals inside the config.
+    """
+
+    # To check if the master password works, we attempt to decrypt 
+    # and get a vault back, if we were able to decrypt, assume it works!
+
+    try:
+        vault = load_vault(config, password)
+        config['storage_options']['majority'] = vault['majority_images']
+        config['storage_options']['total'] = vault['total_images']
+    except:
+        # Something went wrong when loading the vault, we are assuming
+        # that it was an incorrect master password.
+        return 1
+
+    return 0
 
 def get_password(id: int, config: Config, password: str):
     """
