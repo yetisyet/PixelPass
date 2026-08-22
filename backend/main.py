@@ -1,8 +1,9 @@
 # the main python file
 import json
+import base64
 import vault_manager
 import status_manager
-from structs import Vault,Entry,Config 
+from structs import Vault, Entry, Config
 
 """"
     Function that runs the entire backend.
@@ -32,7 +33,7 @@ def check_config():
         with open("config.json") as f:
             raw = json.loads(f.read())
             parsedMode = raw["mode"]
-            if 0 < parsedMode < 6:# 1-5 range
+            if 0 < parsedMode < 6:  # 1-5 range
                 mode = parsedMode
             else:
                 mode = -1
@@ -43,7 +44,9 @@ def check_config():
 
 def retrieve_all_pass_ent(usrInput, config):
     global mPassword
-    passwords = vault_manager.get_services(config, mPassword)  # passwords is a list of Entry struct
+    passwords = vault_manager.get_services(
+        config, mPassword
+    )  # passwords is a list of Entry struct
     payload = {
         "elecID": usrInput["elecID"],
         "action": 1,
@@ -66,7 +69,7 @@ def retrieve_all_pass_ent(usrInput, config):
 
 def reveal_password(usrInput, config):
     global mPassword
-    password = vault_manager.get_password(usrInput["data"]["id"], config, mPassword) 
+    password = vault_manager.get_password(usrInput["data"]["id"], config, mPassword)
     payload = {
         "elecID": usrInput["elecID"],
         "action": 2,
@@ -99,6 +102,7 @@ def remove_password(usrInput, config):
         payload = {"elecID": usrInput["elecID"], "action": 4, "success": False}
     print(json.dumps(payload))
 
+
 def edit_password(usrInput, config):
     global mPassword
     thisEntry = Entry(
@@ -116,35 +120,46 @@ def edit_password(usrInput, config):
     print(json.dumps(payload))
 
 
-def startup(): #should return a config instance
+def startup():  # should return a config instance
     global mode
     global mPassword
     payload = {"mode": mode}
     print(json.dumps(payload))
     returnVal = json.loads(input())
     if mode == -1:
-        vault = vault_manager.init_vault(returnVal["mode"], returnVal["majority"], returnVal["total"])
+        vault = vault_manager.init_vault(
+            returnVal["mode"], returnVal["majority"], returnVal["total"]
+        )
         mode_populate(returnVal)
     else:
         mPassword = returnVal["password"]
     return get_config()
 
+
 def get_config():
     with open("config.json") as f:
-        raw: Config = json.loads(f.read()) #raw is a python dictionary
-    return raw 
+        raw: Config = json.loads(f.read())  # raw is a python dictionary
+    return raw
 
-#mode populate function is activated when there is no config file
+
+# mode populate function is activated when there is no config file
 # it gets the mode and then parses what is from Front end
-def mode_populate(returnVal): 
+def mode_populate(returnVal):
     mode = returnVal["mode"]
     match mode:
         case 1:
+            images = []
+            for obj in returnVal["data"]:
+                images.append(Image.open(base64.b64decode(obj)))
+            vault_manager.populate_vault_raw(images)
         case 2:
+            vault_manager.populate_vault_path_folder(returnVal["path"])
         case 3:
+            vault_manager.populate_vault_path_images(returnVal["paths"])
         case 4:
+            vault_manager.populate_vault_self()
         case 5:
-
+            raise ("Not implemented")
 
 
 def main_server(config):
