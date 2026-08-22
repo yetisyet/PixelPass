@@ -204,7 +204,7 @@ export default function Dashboard() {
       setPasswords(demoEntries)
       setIsDemoMode(true)
       setError(loadError.message)
-      setStatusMessage("backend is hiding T~T — demo paws loaded >w<")
+      setStatusMessage("Backend is hiding T~T — demo paws loaded >w<")
     } finally {
       if (requestId === listRequestId.current) setIsLoading(false)
     }
@@ -502,8 +502,7 @@ export default function Dashboard() {
               </nav>
 
               <div className="pixelpass-sidebar-note">
-                <PawPrint aria-hidden="true" />
-                <p>secrets stay covered until u click Reveal ^w^</p>
+              <p>secrets stay covered until u click Reveal ^w^ <img width="16" height="16" src="https://img.icons8.com/forma-bold-filled/24/lock-2.png" alt="lock-2" style={{ marginLeft: "16em" }} /> </p>
               </div>
             </aside>
 
