@@ -6,8 +6,8 @@ import json
 Vault schema:
 
 {
-    total_images: 10,
-    majority_images: 5,
+    total_images: int,
+    majority_images: int,
     password_entries: [
         {
             id: int, 
