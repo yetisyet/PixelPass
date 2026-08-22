@@ -1,9 +1,8 @@
 # this file listst all the dataclasses.
-from dataclasses import dataclass
+from typing import TypedDict
 
 
-@dataclass
-class Entry:
+class Entry(TypedDict):
     """class for holding the entries"""
 
     id: int
@@ -11,3 +10,24 @@ class Entry:
     username: str
     password: str
     is_fav: bool
+
+
+class Vault(TypedDict):
+    total_images: int
+    majority_images: int
+    password_entries: list[Entry]
+    passcode_entries: list[dict]
+    passkey_entries: list[dict]
+
+
+class StorageOptions(TypedDict):
+    individual_passwords: bool
+    majority: int
+    total: int
+    read_only: bool
+
+
+class Config(TypedDict):
+    mode: int
+    pool: list[str]
+    storage_options: StorageOptions

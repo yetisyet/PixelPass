@@ -1,6 +1,10 @@
 from stegano import lsb
 from crypto_manager import collect_data, distribute_data
+from structs import Vault, Config, StorageOptions
 import json
+from pathlib import Path
+from PIL import Image
+import os
 
 """
 Vault schema:
@@ -28,19 +32,19 @@ Vault schema:
 """
 
 
-def save_vault(vault: object, config, password) -> int:
+def save_vault(vault: Vault, config: Config, password: str) -> int:
     """
     Takes a vault configuration and saves it to the pool depending on storage modes.
     REQUIRES !read_only
     """
 
     pool = config['pool']
-    storage_config = config['storage_options']
+    storage_config: StorageOptions = config['storage_options']
     read_only = storage_config['read_only']
     individual_passwords = storage_config['individual_passwords']
     majority = storage_config['majority']
 
-    if not read_only:
+    if read_only:
         return 1
 
     if not individual_passwords:
@@ -49,19 +53,32 @@ def save_vault(vault: object, config, password) -> int:
 
         assert len(distributed_vault) == len(pool)
         for i, path in enumerate(pool):
-            lsb.hide(path, distributed_vault[i].hex()).save(path)
+            original = Path(path)
+            temp = original.with_name(f".{original.name}.tmp")
+
+            encoded = lsb.hide(path, distributed_vault[i].hex(), auto_convert_rgb=True)
+
+            try:
+                encoded.save(temp, format="PNG")
+
+                with Image.open(temp) as image:
+                    image.verify()
+                os.replace(temp, original)
+            finally:
+                if temp.exists():
+                    temp.unlink()
     else:
         raise NotImplemented
     
     return 0
 
-def load_vault(config, password) -> object:
+def load_vault(config: Config, password: str) -> Vault:
     """
     Takes a pool and storage mode and generates a vault configuration.
     """
 
     pool = config['pool']
-    storage_config = config['storage_options']
+    storage_config: StorageOptions = config['storage_options']
     individual_passwords = storage_config['individual_passwords']
 
     shamirs = []
