@@ -2,6 +2,7 @@ import json
 from PIL import Image
 import os
 import zipfile
+from typing import TypedDict
 
 config_file = "config.json"
 
@@ -11,8 +12,12 @@ def init_vault(mode: int):
        3: User will pass images (paths) to seed with
        4: Randomly choose files on your PC 
     """
+    # check if in recover mode -> read only
+    s_ops: StorageOptions = {"individual_passwords" : False, "majority": 1, "total": 1, "read_only": False}
     settings = {
-        "mode" : mode
+        "mode" : mode,
+        "pool" : [],
+        "storage_options": s_ops
     }
     with open(config_file, "w") as config:
         config.write(json.dumps(settings))
@@ -36,8 +41,11 @@ def populate_vault_path_images(folders: list[str]):
             return -1
             
         settings["pool"] = folders
+
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
+        set_majority(folders.count)
+        set_total(folders.count)
     except:
         return (-1)
     return 0
@@ -52,6 +60,7 @@ def populate_vault_path_folder(path: str):
         dir = os.listdir("path")
 
         # check the path has only images 
+        image_count = 0
         non_image_count = 0
         for file in dir:
             if(os.path.isfile(file)):
@@ -65,7 +74,9 @@ def populate_vault_path_folder(path: str):
 
         settings["pool"] = [path]
         with open(config_file, "w") as config:
-            config.write(json.dump(settings))
+            config.write(json.dumps(settings))
+        set_majority(image_count)
+        set_total(image_count)
         return 0
     except:
         return -1
@@ -83,8 +94,9 @@ def populate_vault_raw(images: list[Image]):
 
         settings["pool"] = ["images"]
         with open(config_file, "w") as config:
-            config.write(json.dump(settings))
-
+            config.write(json.dumps(settings))
+        set_total(images.count)
+        set_majority(images.count)
         return 0
     except:
         return -1
@@ -94,4 +106,28 @@ def populate_vault_self():
     os.mkdir("images")
     with zipfile.ZipFIle("photos.zip") as zip_ref:
         zip_ref.extractall("images")
+    set_majority(24)
+    set_total(24)
     return 0
+
+def set_majority(num: int):
+    try:
+        config = open(config_file)
+        settings = json.load(config.read())
+        config.close()
+        settings["StorageOptions"]["majority"] = num
+        with open(config_file, "w") as config:
+            config.write(json.dumps(settings))
+    except:
+        return -1
+
+def set_total(num: int):
+    try:
+        config = open(config_file)
+        settings = json.load(config.read())
+        config.close()
+        settings["StorageOptions"]["total"] = num
+        with open(config_file, "w") as config:
+            config.write(json.dumps(settings))
+    except:
+        return -1
