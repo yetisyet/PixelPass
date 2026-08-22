@@ -134,9 +134,11 @@ def startup():  # should return a config instance
         mode_populate(returnVal)
         conf = get_config()
         status_manager.save_vault(vault, conf, mPassword)
+        success = True
     else:
         conf = get_config()
-    print(json.dumps({"status": True, "elecID": returnVal["elecID"]}))
+        success = vault_manager.check_master_password(conf, mPassword) 
+    print(json.dumps({"success": success, "elecID": returnVal["elecID"]}))
 
     return conf
 
