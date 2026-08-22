@@ -21,6 +21,8 @@ mode = -1
     if mode = -1 this means that there is no config file and hence vault_init needs to be called
     if mode != -1, this means that there is a mode and it goes as normal. 
 """
+
+
 def check_config():
     global mode
     try:
@@ -35,9 +37,10 @@ def check_config():
         mode = -1  # remove this and replace it with the return val above
 
 
-def retrieve_all_pass_ent():
+def retrieve_all_pass_ent(usrInput):
     passwords = vault_manager.get_services()  # passwords is a list of Entry structs
     payload = {
+        "elecID": usrInput["elecID"],
         "action": 1,
         "success": True,
         "data": {
@@ -52,12 +55,14 @@ def retrieve_all_pass_ent():
             ]
         },
     }
-    print(json.dumps(payload)
+
+    print(json.dumps(payload))
 
 
-def reveal_password(serviceName, userName):
-    password = vault_manager.get_password(serviceName, userName)
+def reveal_password(usrInput):
+    password = vault_manager.get_password(usrInput["data"]["id"])
     payload = {
+        "elecID": usrInput["elecID"],
         "action": 2,
         "success": True,
         "data": {"password": password},
@@ -74,18 +79,16 @@ def create_password(usrInput):
         usrInput["data"]["isFav"],
     )
     vault_manager.add_entry(thisEntry)
-    payload = {"action": 3, "success": True}
+    payload = {"elecID": usrInput["elecID"], "action": 3, "success": True}
     print(json.dumps(payload))
 
 
 def remove_password(usrInput):
-    status = vault_manager.remove_password(
-        usrInput["data"]["serviceName"], usrInput["data"]["username"]
-    )
+    status = vault_manager.remove_entry(usrInput["data"]["id"])
     if status == 0:
-        payload = {"action": 4, "success": True}
+        payload = {"elecID": usrInput["elecID"], "action": 4, "success": True}
     else:
-        payload = {"action": 4, "success": False}
+        payload = {"elecID": usrInput["elecID"], "action": 4, "success": False}
     print(json.dumps(payload))
 
 
@@ -94,7 +97,9 @@ def startup():
     payload = {"mode": mode}
     print(json.dumps(payload))
     returnVal = json.loads(input())
-    vault_manager.init_vault(returnVal["mode"], returnVal["password"], returnVal["recover_mode"])
+    vault_manager.init_vault(
+        returnVal["mode"], returnVal["password"], returnVal["recover_mode"]
+    )
 
 
 def edit_password(usrInput):
@@ -125,11 +130,9 @@ def main_server():
         action = usrInput["action"]
         match action:
             case 1:
-                retrieve_all_pass_ent()
+                retrieve_all_pass_ent(usrInput)
             case 2:
-                reveal_password(
-                    usrInput["data"]["serviceName"], usrInput["data"]["username"]
-                )
+                reveal_password(usrInput)
             case 3:
                 create_password(usrInput)
             case 4:
