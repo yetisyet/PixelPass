@@ -1,3 +1,9 @@
+
+elelectron/.design-rules
+.agents/skills/impeccable/
+.codex/
+DESIGN.md
+PRODUCT.md
 venv/
 test/
 *__pycache__*

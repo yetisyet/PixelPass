@@ -1,0 +1,1113 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "7.css/dist/7.scoped.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Geist Variable', sans-serif;
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.205 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.922 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.556 0 0);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    }
+  html {
+    @apply font-sans;
+  }
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  overflow-x: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.pixelpass-desktop {
+  --pixelpass-ink: #18252e;
+  --pixelpass-muted: #526674;
+  --pixelpass-blue: #0b6ead;
+  --pixelpass-soft-blue: #e8f5ff;
+  --pixelpass-paw: #8f5f9f;
+  min-height: 100vh;
+  color: var(--pixelpass-ink);
+  font-family: "Segoe UI", SegoeUI, Tahoma, sans-serif;
+  background:
+    radial-gradient(circle at 82% 20%, rgba(255, 255, 255, 0.38) 0 3%, transparent 18%),
+    radial-gradient(circle at 15% 88%, rgba(116, 228, 224, 0.28), transparent 28%),
+    linear-gradient(145deg, #2c8db7 0%, #65c3cd 42%, #1b5e88 100%);
+}
+
+.pixelpass-global-nav {
+  min-height: 54px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 7px 16px;
+  border-bottom: 1px solid rgba(20, 63, 85, 0.72);
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.72),
+    0 2px 8px rgba(10, 42, 58, 0.3);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.68), rgba(205, 232, 243, 0.68) 46%, rgba(118, 183, 211, 0.62) 47%, rgba(208, 236, 245, 0.62));
+  backdrop-filter: blur(10px);
+}
+
+.pixelpass-brand,
+.pixelpass-brand > span:last-child,
+.pixelpass-route-buttons,
+.pixelpass-route-buttons button,
+.pixelpass-command-bar,
+.pixelpass-command-group,
+.pixelpass-command-bar button,
+.pixelpass-sidebar-heading,
+.pixelpass-service-cell,
+.pixelpass-action-cell button,
+.pixelpass-status-message,
+.pixelpass-dialog-heading,
+.pixelpass-home-actions button {
+  display: flex;
+  align-items: center;
+}
+
+.pixelpass-brand {
+  gap: 9px;
+  min-width: 0;
+  text-shadow: 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.pixelpass-brand > span:last-child {
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.08;
+}
+
+.pixelpass-brand strong {
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+.pixelpass-brand small {
+  margin-top: 3px;
+  color: #345b71;
+  font-size: 10px;
+}
+
+.pixelpass-brand-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  color: #fff;
+  border: 1px solid rgba(33, 64, 84, 0.9);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.74),
+    inset 0 -1px rgba(58, 35, 69, 0.35),
+    0 1px 2px rgba(12, 42, 58, 0.4);
+  background: linear-gradient(#c99ad5, #88609c 48%, #664579 52%, #936ca2);
+}
+
+.pixelpass-brand-icon svg {
+  width: 21px;
+  height: 21px;
+  filter: drop-shadow(0 1px rgba(52, 34, 64, 0.7));
+}
+
+.pixelpass-route-buttons {
+  gap: 6px;
+}
+
+.win7 .pixelpass-route-buttons button {
+  min-width: 88px;
+  min-height: 30px;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pixelpass-route-buttons svg,
+.pixelpass-command-bar button svg,
+.pixelpass-action-cell button svg,
+.pixelpass-home-actions button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.pixelpass-page {
+  min-height: calc(100vh - 54px);
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.win7 .pixelpass-main-window {
+  width: min(1180px, 100%);
+  height: min(720px, calc(100vh - 90px));
+  min-height: 490px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 17px 42px rgba(9, 37, 54, 0.5);
+}
+
+.win7 .pixelpass-main-window > .title-bar,
+.win7 .pixelpass-home-window > .title-bar,
+.win7 .pixelpass-dialog-window > .title-bar {
+  flex: 0 0 auto;
+}
+
+.win7 .pixelpass-window-body {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin: 0 6px 6px;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #7192a8;
+  background: #f5f8fa;
+}
+
+.pixelpass-command-bar {
+  min-height: 42px;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #aebdcc;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fff, #edf3f8 54%, #dce8f1);
+}
+
+.pixelpass-command-group {
+  gap: 6px;
+}
+
+.win7 .pixelpass-command-bar button {
+  min-height: 28px;
+  gap: 6px;
+  justify-content: center;
+}
+
+.pixelpass-explorer {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  background: #fff;
+}
+
+.pixelpass-sidebar {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 13px 10px 10px;
+  border-right: 1px solid #b8c7d1;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.78), rgba(232, 242, 249, 0.84)),
+    #edf5fa;
+}
+
+.pixelpass-sidebar-heading {
+  gap: 9px;
+  padding: 0 7px 12px;
+  border-bottom: 1px solid #ccd9e1;
+}
+
+.pixelpass-sidebar-heading > svg {
+  width: 29px;
+  height: 29px;
+  flex: 0 0 29px;
+  color: var(--pixelpass-paw);
+  filter: drop-shadow(0 1px #fff);
+}
+
+.pixelpass-sidebar-heading div {
+  min-width: 0;
+}
+
+.pixelpass-sidebar-heading strong,
+.pixelpass-sidebar-heading span {
+  display: block;
+}
+
+.pixelpass-sidebar-heading strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pixelpass-sidebar-heading span {
+  margin-top: 2px;
+  color: var(--pixelpass-muted);
+  font-size: 10px;
+}
+
+.pixelpass-sidebar nav {
+  display: grid;
+  gap: 2px;
+  margin-top: 9px;
+}
+
+.win7 .pixelpass-sidebar-link {
+  width: 100%;
+  min-width: 0;
+  min-height: 33px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 4px 9px;
+  color: #234f6c;
+  text-align: left;
+  border-color: transparent;
+  box-shadow: none;
+  background: transparent;
+}
+
+.win7 .pixelpass-sidebar-link::before,
+.win7 .pixelpass-sidebar-link::after {
+  border-radius: 3px;
+}
+
+.win7 .pixelpass-sidebar-link.is-active {
+  color: #173e56;
+  border-color: #84b9d8;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.75);
+  background: linear-gradient(rgba(238, 249, 255, 0.98), rgba(194, 227, 246, 0.94));
+}
+
+.pixelpass-sidebar-link svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+}
+
+.pixelpass-sidebar-note {
+  margin-top: auto;
+  padding: 9px;
+  color: #4c6575;
+  border: 1px solid #c5d8e4;
+  border-radius: 3px;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fbfdff, #e8f3fa);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.pixelpass-sidebar-note svg {
+  width: 16px;
+  height: 16px;
+  margin-bottom: 3px;
+  color: var(--pixelpass-paw);
+}
+
+.pixelpass-sidebar-note p {
+  margin: 0;
+}
+
+.pixelpass-content {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 13px;
+  background: #fff;
+}
+
+.pixelpass-content-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 10px;
+}
+
+.pixelpass-content-header h1,
+.pixelpass-content-header p,
+.pixelpass-dialog-heading h2,
+.pixelpass-dialog-heading p,
+.pixelpass-empty-state h1,
+.pixelpass-empty-state h2,
+.pixelpass-empty-state p,
+.pixelpass-home-copy h1,
+.pixelpass-home-copy p {
+  margin: 0;
+}
+
+.pixelpass-content-header h1 {
+  color: #1c4d6a;
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.pixelpass-content-header p {
+  margin-top: 2px;
+  color: var(--pixelpass-muted);
+  font-size: 10px;
+}
+
+.pixelpass-search {
+  width: min(340px, 48%);
+  min-width: 190px;
+  position: relative;
+  display: block;
+}
+
+.pixelpass-search > svg:first-child,
+.pixelpass-search-paw {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 14px;
+  height: 14px;
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+
+.pixelpass-search > svg:first-child {
+  left: 8px;
+  color: #4c6e82;
+}
+
+.pixelpass-search-paw {
+  right: 8px;
+  color: var(--pixelpass-paw);
+}
+
+.win7 .pixelpass-search input {
+  width: 100%;
+  height: 30px;
+  box-sizing: border-box;
+  padding: 4px 30px 4px 28px;
+}
+
+.pixelpass-list-frame {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid #aebcc7;
+  box-shadow:
+    inset 1px 1px 2px rgba(41, 65, 79, 0.16),
+    0 1px #fff;
+  background: #fff;
+}
+
+.pixelpass-table-scroll {
+  width: 100%;
+  overflow: auto;
+}
+
+.win7 .pixelpass-password-table {
+  width: 100%;
+  min-width: 610px;
+  border: 0;
+  table-layout: fixed;
+}
+
+.win7 .pixelpass-password-table th:nth-child(1) {
+  width: 30%;
+}
+
+.win7 .pixelpass-password-table th:nth-child(2) {
+  width: 38%;
+}
+
+.win7 .pixelpass-password-table th:nth-child(3) {
+  width: 12%;
+}
+
+.win7 .pixelpass-password-table th:nth-child(4) {
+  width: 20%;
+}
+
+.win7 .pixelpass-password-table tbody tr {
+  border-bottom: 1px solid #edf0f2;
+}
+
+.win7 .pixelpass-password-table tbody tr:hover {
+  background: linear-gradient(#f8fcff, #e6f4fd);
+}
+
+.win7 .pixelpass-password-table tbody td {
+  height: 46px;
+  box-sizing: border-box;
+  padding: 5px 9px;
+}
+
+.pixelpass-service-cell {
+  min-width: 0;
+  gap: 8px;
+}
+
+.pixelpass-service-cell svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  color: #3c7ca5;
+}
+
+.pixelpass-service-cell strong,
+.pixelpass-username-cell {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pixelpass-favorite-cell {
+  text-align: center;
+}
+
+.pixelpass-favorite-cell svg {
+  width: 16px;
+  height: 16px;
+  color: #b28018;
+}
+
+.pixelpass-action-cell {
+  text-align: right;
+}
+
+.win7 .pixelpass-action-cell button {
+  min-width: 82px;
+  min-height: 27px;
+  justify-content: center;
+  gap: 5px;
+  margin-left: auto;
+}
+
+.pixelpass-empty-state,
+.pixelpass-loading {
+  width: 100%;
+  min-height: 230px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  color: var(--pixelpass-muted);
+  text-align: center;
+}
+
+.pixelpass-empty-state > svg,
+.pixelpass-loading > svg {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 10px;
+  color: var(--pixelpass-paw);
+  opacity: 0.82;
+}
+
+.pixelpass-empty-state h1,
+.pixelpass-empty-state h2 {
+  color: #31586d;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.pixelpass-empty-state p {
+  max-width: 460px;
+  margin-top: 5px;
+  line-height: 1.4;
+}
+
+.pixelpass-empty-state button {
+  margin-top: 14px;
+}
+
+.pixelpass-loading {
+  gap: 7px;
+}
+
+.pixelpass-loading .marquee {
+  width: min(340px, 80%);
+}
+
+.win7 .pixelpass-main-window > .status-bar {
+  flex: 0 0 auto;
+}
+
+.pixelpass-status-message {
+  gap: 5px;
+}
+
+.pixelpass-status-message svg {
+  width: 12px;
+  height: 12px;
+  color: var(--pixelpass-paw);
+}
+
+.win7 .pixelpass-main-window .status-bar-field:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.win7 .pixelpass-main-window .status-bar-field:not(:first-child) {
+  flex: 0 0 auto;
+  min-width: 92px;
+  text-align: center;
+}
+
+[data-slot="dialog-overlay"] {
+  background: rgba(15, 39, 54, 0.3);
+  backdrop-filter: blur(2px);
+}
+
+[data-slot="dialog-content"] {
+  font-family: "Segoe UI", SegoeUI, Tahoma, sans-serif;
+}
+
+.win7 .pixelpass-dialog-window {
+  width: 100%;
+  overflow: hidden;
+  box-shadow: 0 16px 38px rgba(7, 30, 44, 0.56);
+}
+
+.win7 .pixelpass-dialog-window .window-body {
+  margin-bottom: 0;
+  padding: 18px;
+}
+
+.pixelpass-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 9px 12px;
+  border: 1px solid #aebdc7;
+  border-top-color: #c8d2d8;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#f7f8f9, #e7ebee);
+}
+
+.win7 .pixelpass-dialog-footer button {
+  min-width: 92px;
+}
+
+.pixelpass-dialog-heading {
+  align-items: flex-start;
+  gap: 11px;
+  margin-bottom: 16px;
+}
+
+.pixelpass-dialog-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  color: #fff;
+  border: 1px solid #67506e;
+  border-radius: 6px;
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.72), 0 1px 2px rgba(51, 36, 57, 0.36);
+  background: linear-gradient(#ca9ed5, #805c91);
+}
+
+.pixelpass-dialog-icon svg {
+  width: 23px;
+  height: 23px;
+}
+
+.pixelpass-dialog-heading h2 {
+  color: #1f4f6c;
+  font-size: 16px;
+  font-weight: 400;
+}
+
+.pixelpass-dialog-heading p {
+  margin-top: 4px;
+  color: var(--pixelpass-muted);
+  line-height: 1.35;
+}
+
+.pixelpass-form-grid {
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px 10px;
+}
+
+.win7 .pixelpass-form-grid input,
+.win7 .pixelpass-password-field {
+  width: 100%;
+  min-height: 27px;
+  box-sizing: border-box;
+}
+
+.pixelpass-checkbox-row {
+  display: flex;
+  align-items: center;
+  margin: 13px 0 0 126px;
+}
+
+.pixelpass-error-panel {
+  margin-bottom: 14px;
+  padding: 9px 11px;
+  color: #6c2020;
+  border: 1px solid #d39a9a;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fff7f7, #f5dddd);
+}
+
+.pixelpass-error-panel strong,
+.pixelpass-error-panel p {
+  display: block;
+  margin: 0;
+}
+
+.pixelpass-error-panel p {
+  margin-top: 3px;
+}
+
+.pixelpass-field-stack {
+  display: grid;
+  gap: 6px;
+}
+
+.pixelpass-password-field {
+  font-family: Consolas, "Courier New", monospace;
+}
+
+.pixelpass-copy-status {
+  min-height: 17px;
+  margin: 2px 0 0;
+  color: #4c6575;
+}
+
+.pixelpass-reveal-body [aria-busy="true"] p {
+  margin: 0 0 8px;
+}
+
+.pixelpass-home-window {
+  width: min(720px, 100%);
+  box-shadow: 0 17px 42px rgba(9, 37, 54, 0.5);
+}
+
+.pixelpass-home-body {
+  min-height: 350px;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.82fr) minmax(280px, 1.18fr);
+  gap: 28px;
+  align-items: center;
+  box-sizing: border-box;
+  padding: 32px;
+  background: linear-gradient(120deg, #f9fcff, #edf6fb);
+}
+
+.pixelpass-home-art {
+  height: 238px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: #3a79a0;
+  border: 1px solid #b7d2e2;
+  border-radius: 5px;
+  box-shadow: inset 0 0 34px rgba(90, 169, 208, 0.2), 0 1px #fff;
+  background:
+    radial-gradient(circle at 28% 20%, rgba(255, 255, 255, 0.9), transparent 28%),
+    linear-gradient(145deg, #d9f2fb, #b6ddec);
+  overflow: hidden;
+}
+
+.pixelpass-home-art > svg:first-child {
+  width: 108px;
+  height: 108px;
+  filter: drop-shadow(0 2px rgba(255, 255, 255, 0.8));
+}
+
+.pixelpass-home-paw {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  color: var(--pixelpass-paw);
+  opacity: 0.45;
+  transform: rotate(-18deg);
+}
+
+.pixelpass-home-paw-one {
+  top: 24px;
+  right: 28px;
+}
+
+.pixelpass-home-paw-two {
+  bottom: 24px;
+  left: 25px;
+  transform: rotate(20deg) scale(0.82);
+}
+
+.pixelpass-home-copy {
+  min-width: 0;
+}
+
+.pixelpass-home-copy .pixelpass-eyebrow {
+  margin-bottom: 5px;
+  color: var(--pixelpass-paw);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pixelpass-home-copy h1 {
+  color: #164f70;
+  font-size: clamp(25px, 5vw, 40px);
+  font-weight: 300;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.pixelpass-home-copy > p:not(.pixelpass-eyebrow) {
+  margin-top: 14px;
+  color: #415f70;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.pixelpass-home-actions {
+  margin-top: 24px;
+}
+
+.win7 .pixelpass-home-actions button {
+  min-height: 32px;
+  gap: 7px;
+}
+
+.pixelpass-not-found-window {
+  width: min(480px, 100%);
+}
+
+.pixelpass-not-found-window .pixelpass-empty-state {
+  min-height: 270px;
+}
+
+@media (max-width: 720px) {
+  .pixelpass-global-nav {
+    padding-inline: 10px;
+  }
+
+  .pixelpass-page {
+    place-items: stretch;
+    padding: 8px;
+  }
+
+  .win7 .pixelpass-main-window {
+    width: 100%;
+    height: calc(100vh - 70px);
+    min-height: 500px;
+  }
+
+  .pixelpass-explorer {
+    grid-template-columns: 154px minmax(0, 1fr);
+  }
+
+  .pixelpass-sidebar {
+    padding-inline: 7px;
+  }
+
+  .pixelpass-sidebar-heading {
+    padding-inline: 4px;
+  }
+
+  .pixelpass-sidebar-heading > svg {
+    display: none;
+  }
+
+  .pixelpass-content {
+    padding: 9px;
+  }
+
+  .pixelpass-content-header {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .pixelpass-search {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pixelpass-home-body {
+    grid-template-columns: 1fr;
+  }
+
+  .pixelpass-home-art {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .pixelpass-page {
+    min-height: calc(100vh - 58px);
+  }
+
+  .pixelpass-brand small,
+  .pixelpass-command-group button:first-child svg,
+  .pixelpass-command-group button:nth-child(2) svg {
+    display: none;
+  }
+
+  .pixelpass-brand-icon {
+    width: 30px;
+    height: 30px;
+    flex-basis: 30px;
+  }
+
+  .win7 .pixelpass-route-buttons button {
+    min-width: 38px;
+    min-height: 44px;
+    padding-inline: 9px;
+    font-size: 0;
+  }
+
+  .pixelpass-route-buttons button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .pixelpass-explorer {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .pixelpass-sidebar {
+    flex: 0 0 auto;
+    display: block;
+    padding: 7px;
+    border-right: 0;
+    border-bottom: 1px solid #b8c7d1;
+  }
+
+  .pixelpass-sidebar-heading,
+  .pixelpass-sidebar-note {
+    display: none;
+  }
+
+  .pixelpass-sidebar nav {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 0;
+  }
+
+  .win7 .pixelpass-sidebar-link {
+    min-height: 44px;
+    justify-content: center;
+    padding-inline: 5px;
+    font-size: 0;
+  }
+
+  .pixelpass-sidebar-link svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .pixelpass-command-bar {
+    align-items: stretch;
+  }
+
+  .win7 .pixelpass-command-bar button {
+    min-width: 0;
+    padding-inline: 8px;
+  }
+
+  .pixelpass-content-header h1 {
+    font-size: 17px;
+  }
+
+  .win7 .pixelpass-password-table {
+    min-width: 100%;
+  }
+
+  .win7 .pixelpass-password-table th:nth-child(1) {
+    width: 38%;
+  }
+
+  .win7 .pixelpass-password-table th:nth-child(2) {
+    width: 35%;
+  }
+
+  .win7 .pixelpass-password-table th:nth-child(3),
+  .win7 .pixelpass-password-table td:nth-child(3) {
+    display: none;
+  }
+
+  .win7 .pixelpass-password-table th:nth-child(4) {
+    width: 27%;
+  }
+
+  .win7 .pixelpass-action-cell button {
+    min-width: 78px;
+    padding-inline: 7px;
+  }
+
+  .win7 .pixelpass-main-window .status-bar-field:not(:first-child) {
+    display: none;
+  }
+
+  .pixelpass-form-grid {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+
+  .pixelpass-form-grid input + label {
+    margin-top: 4px;
+  }
+
+  .pixelpass-checkbox-row {
+    margin-left: 0;
+  }
+
+  .win7 .pixelpass-dialog-window .window-body {
+    padding: 14px;
+  }
+
+  .pixelpass-dialog-heading h2 {
+    font-size: 14px;
+  }
+
+  .pixelpass-home-body {
+    min-height: 320px;
+    padding: 24px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .win7 button.default,
+  .win7 button:focus {
+    animation: none;
+  }
+}
