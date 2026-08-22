@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import logo from "../lib/logo.png"
 import border from "../lib/pfp_border.png"
 import background from "../lib/background.jpg"
+import { sendBackendRequest } from "@/lib/backend-client"
 
 // ---------------------------------------------------------------------------
 // Draggable window hook (from the 7.css prototype)
@@ -50,10 +51,27 @@ function useDraggable(initialPos = { x: 0, y: 0 }) {
 const WINDOWS_PATH_REGEX =
     /^(?:[a-zA-Z]:\\|\\\\)(?:[^<>:"/\\|?*\r\n]+\\)*[^<>:"/\\|?*\r\n]*$/
 
-const PNG_FILE_REGEX = /\.png$/i
+function isValidPath(value) {
+    return WINDOWS_PATH_REGEX.test(value) || value.startsWith("/")
+}
 
-function filterPngFiles(fileList) {
-    return Array.from(fileList).filter((f) => PNG_FILE_REGEX.test(f.name))
+const METHOD_TO_MODE = {
+    "Paste Image": 1,
+    "Custom Directory": 2,
+    "Image/s Upload": 3,
+    "Randomly Selected": 4,
+}
+
+function pastedImagePayload(dataUrl) {
+    if (typeof dataUrl !== "string" || !dataUrl.includes(",")) return null
+
+    const [metadata, dataBase64] = dataUrl.split(",", 2)
+    const mimeType = metadata.match(/^data:([^;]+)/)?.[1] ?? "image/png"
+    return {
+        dataBase64,
+        mimeType,
+        name: "pasted-image.png",
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -137,20 +155,13 @@ export default function Home() {
     const [showMasterkey, setShowMasterkey] = useState(false)
     const [masterkey, setMasterkey] = useState("")
     const [masterkeyError, setMasterkeyError] = useState("")
+    const [backendMode, setBackendMode] = useState(null)
+    const [isBackendLoading, setIsBackendLoading] = useState(true)
+    const [isSubmitting, setIsSubmitting] = useState(false)
+    const [startupError, setStartupError] = useState("")
+    const [statusMessage, setStatusMessage] = useState("checking backend config…")
     const masterkeyRegex =
         /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/
-
-    const handleUnlock = (e) => {
-        e.preventDefault()
-        if (!masterkeyRegex.test(masterkey)) {
-            setMasterkeyError(
-                "Masterkey must be 8–16 characters and include an uppercase letter, lowercase letter, number, and special character."
-            )
-            return
-        }
-        setMasterkeyError("")
-        navigate("/dashboard")
-    }
 
     // --- Vault avatar method dropdown ---
     const [avatarMethod, setAvatarMethod] = useState("N/A")
@@ -183,6 +194,135 @@ export default function Home() {
         y: 0,
     })
 
+    // --- Missing-config notification window state ---
+    const [showNoConfigWindow, setShowNoConfigWindow] = useState(false)
+    const [noConfigMinimized, setNoConfigMinimized] = useState(false)
+    const { pos: noConfigPos, onMouseDown: onNoConfigMouseDown } =
+        useDraggable({ x: -260, y: 130 })
+
+    function initializationSource() {
+        const selectedMode = METHOD_TO_MODE[avatarMethod]
+
+        if (selectedMode === 1) {
+            const image = pastedImagePayload(pastedImage)
+            if (!image) throw new Error("Paste an image before initializing.")
+            return {
+                mode: selectedMode,
+                source: { type: "uploadedImages", images: [image] },
+            }
+        }
+
+        if (selectedMode === 2) {
+            if (!customDirPath || !isValidPath(customDirPath)) {
+                throw new Error("Choose or enter a valid directory path.")
+            }
+            return {
+                mode: selectedMode,
+                source: {
+                    type: "directory",
+                    directoryPath: customDirPath,
+                },
+            }
+        }
+
+        if (selectedMode === 3) {
+            if (uploadedFiles.length === 0) {
+                throw new Error("Choose at least one image path.")
+            }
+            return {
+                mode: selectedMode,
+                source: {
+                    type: "imagePaths",
+                    imagePaths: uploadedFiles,
+                },
+            }
+        }
+
+        if (selectedMode === 4) {
+            return {
+                mode: selectedMode,
+                source: { type: "selfPopulate" },
+            }
+        }
+
+        throw new Error("Choose a vault avatar method first.")
+    }
+
+    async function handleUnlock(event) {
+        event.preventDefault()
+        setMasterkeyError("")
+
+        if (isBackendLoading || backendMode === null) {
+            setMasterkeyError("Wait for the backend config check to finish.")
+            return
+        }
+
+        if (!masterkeyRegex.test(masterkey)) {
+            setMasterkeyError(
+                "Masterkey must be 8–16 characters and include an uppercase letter, lowercase letter, number, and special character."
+            )
+            return
+        }
+
+        try {
+            setIsSubmitting(true)
+            let response
+
+            if (backendMode === 0) {
+                const selected = initializationSource()
+
+                response = await sendBackendRequest({
+                    action: "initialize",
+                    data: {
+                        mode: selected.mode,
+                        source: selected.source,
+                        vaultPassword: masterkey,
+                    },
+                })
+            } else {
+                response = await sendBackendRequest({
+                    action: "unlock",
+                    data: { vaultPassword: masterkey },
+                })
+            }
+
+            if (!response.success) {
+                throw new Error(response.error ?? "The backend rejected the request.")
+            }
+
+            console.info(
+                backendMode === 0
+                    ? `works — initialized mode ${response.data?.mode}`
+                    : `works — config found for mode ${backendMode}`
+            )
+            setStatusMessage("works — backend received the request ^w^")
+            navigate("/dashboard")
+        } catch (error) {
+            setMasterkeyError(error.message)
+            setStatusMessage("backend request failed T~T")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    async function chooseDirectory() {
+        const selectedPath = await window.pixelPassBackend?.selectDirectory?.()
+        if (!selectedPath) return
+
+        setCustomDirPath(selectedPath)
+        setCustomDirValid(true)
+        setAvatarPath(selectedPath)
+    }
+
+    async function chooseImagePaths() {
+        const selectedPaths =
+            await window.pixelPassBackend?.selectImagePaths?.()
+        if (!Array.isArray(selectedPaths) || selectedPaths.length === 0) return
+
+        setUploadedFiles(selectedPaths)
+        setUploadError("")
+    }
+
     const handleAvatarMethodChange = (e) => {
         const value = e.target.value
         setAvatarMethod(value)
@@ -209,7 +349,40 @@ export default function Home() {
         }
     }
     useEffect(() => {
-        
+        let active = true
+
+        async function receiveStartupMode() {
+            try {
+                const startup = await window.pixelPassBackend?.startup?.()
+                if (!startup || !Number.isInteger(startup.mode)) {
+                    throw new Error("Backend returned an invalid startup mode.")
+                }
+                if (!active) return
+
+                setBackendMode(startup.mode)
+                setShowNoConfigWindow(startup.mode === 0)
+                setStatusMessage(
+                    startup.mode === 0
+                        ? "no config found — initialization required"
+                        : `config found — mode ${startup.mode}`
+                )
+
+                if (startup.mode !== 0) {
+                    console.info(`Config found — mode ${startup.mode}`)
+                }
+            } catch (error) {
+                if (!active) return
+                setStartupError(error.message)
+                setStatusMessage("could not read backend config T~T")
+            } finally {
+                if (active) setIsBackendLoading(false)
+            }
+        }
+
+        receiveStartupMode()
+        return () => {
+            active = false
+        }
     }, [])
     return (
         <main
@@ -272,6 +445,20 @@ export default function Home() {
                                 them only when u need them nyah ^w^
                             </p>
 
+                            {startupError && (
+                                <p className="text-sm text-red-500" role="alert">
+                                    {startupError}
+                                </p>
+                            )}
+
+                            {!isBackendLoading && !startupError && backendMode !== null && (
+                                <p className="text-sm" role="status">
+                                    {backendMode === 0
+                                        ? "No config found — choose an initialization method below."
+                                        : `Config found — mode ${backendMode}. Enter your masterkey to continue.`}
+                                </p>
+                            )}
+
                             <form
                                 onSubmit={handleUnlock}
                                 className="space-y-4 pixelpass-masterkey-form"
@@ -291,6 +478,7 @@ export default function Home() {
                                         }}
                                     >
                                         <input
+                                            disabled={isBackendLoading || isSubmitting || Boolean(startupError)}
                                             id="masterkey"
                                             type={
                                                 showMasterkey
@@ -307,6 +495,7 @@ export default function Home() {
                                             style={{ flex: 1, minWidth: 0 }}
                                         />
                                         <button
+                                            disabled={isBackendLoading || isSubmitting || Boolean(startupError)}
                                             type="button"
                                             onClick={() =>
                                                 setShowMasterkey(
@@ -351,6 +540,7 @@ export default function Home() {
                                     )}
                                 </div>
 
+                                {backendMode === 0 && (
                                 <div className="space-y-2">
                                     <label
                                         htmlFor="avatar-method"
@@ -390,14 +580,20 @@ export default function Home() {
                                         </p>
                                     )}
                                 </div>
+                                )}
 
                                 <div className="pixelpass-home-actions">
                                     <button
                                         className="default"
+                                        disabled={isBackendLoading || isSubmitting || Boolean(startupError)}
                                         type="submit"
                                     >
                                         <KeyRound aria-hidden="true" />
-                                        Open the vault &gt;w&lt;
+                                        {isSubmitting
+                                            ? "Sending…"
+                                            : backendMode === 0
+                                                ? "Initialize the vault"
+                                                : "Open the vault >w<"}
                                     </button>
                                 </div>
                             </form>
@@ -413,11 +609,50 @@ export default function Home() {
                             role="status"
                         >
                             <PawPrint aria-hidden="true" />
-                            ready for headpats & passwords &gt;///&lt;
+                            {statusMessage}
                         </p>
                     </div>
                 )}
             </section>
+
+            {/* First-run configuration notice */}
+            {showNoConfigWindow && (
+                <PixelPassWindow
+                    title="PixelPass setup required"
+                    pos={noConfigPos}
+                    onMouseDown={onNoConfigMouseDown}
+                    isMinimized={noConfigMinimized}
+                    onMinimize={() => setNoConfigMinimized((prev) => !prev)}
+                    onClose={() => setShowNoConfigWindow(false)}
+                    width={360}
+                    statusBar={
+                        <p className="status-bar-field">
+                            backend returned mode 0
+                        </p>
+                    }
+                >
+                    <div className="space-y-4">
+                        <strong>No config found</strong>
+                        <p>
+                            Choose a vault avatar method in the main window.
+                            Each dropdown option tests one initialization mode.
+                        </p>
+                        <ul>
+                            <li>Paste Image — mode 1</li>
+                            <li>Custom Directory — mode 2</li>
+                            <li>Image/s Upload — mode 3</li>
+                            <li>Randomly Selected — mode 4</li>
+                        </ul>
+                        <button
+                            className="default"
+                            type="button"
+                            onClick={() => setShowNoConfigWindow(false)}
+                        >
+                            Choose a mode
+                        </button>
+                    </div>
+                </PixelPassWindow>
+            )}
 
             {/* Custom Directory picker window */}
             {showCustomDirWindow && (
@@ -431,43 +666,18 @@ export default function Home() {
                     width={380}
                 >
                     <div className="space-y-4">
-                        <label
-                            role="button"
-                            tabIndex={0}
+                        <button
+                            type="button"
                             className="default"
+                            onClick={chooseDirectory}
                             style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: 6,
                             }}
                         >
-                            <input
-                                type="file"
-                                webkitdirectory=""
-                                directory=""
-                                style={{ display: "none" }}
-                                onChange={(e) => {
-                                    const files = e.target.files
-                                    if (files && files.length > 0) {
-                                        const relPath =
-                                            files[0].webkitRelativePath ||
-                                            files[0].name
-                                        const folderName =
-                                            relPath.split("/")[0]
-                                        // Browsers don't expose the real absolute
-                                        // path - this is a best-effort guess the
-                                        // user can correct below.
-                                        const fakePath = `C:\\Users\\You\\${folderName}`
-                                        setCustomDirPath(fakePath)
-                                        setCustomDirValid(
-                                            WINDOWS_PATH_REGEX.test(fakePath)
-                                        )
-                                        setAvatarPath(fakePath)
-                                    }
-                                }}
-                            />
                             Browse...
-                        </label>
+                        </button>
 
                         <div className="space-y-2">
                             <label
@@ -485,13 +695,12 @@ export default function Home() {
                                     const value = e.target.value
                                     setCustomDirPath(value)
                                     const valid =
-                                        value === "" ||
-                                        WINDOWS_PATH_REGEX.test(value)
+                                        value === "" || isValidPath(value)
                                     setCustomDirValid(valid)
                                     if (valid && value !== "")
                                         setAvatarPath(value)
                                 }}
-                                placeholder="C:\Users\You\Pictures"
+                                placeholder="C:\\Users\\You\\Pictures"
                                 style={{ width: "100%" }}
                             />
                             {!customDirValid && (
@@ -502,7 +711,7 @@ export default function Home() {
                                         wordBreak: "break-word",
                                     }}
                                 >
-                                    That doesn't look like a valid Windows path.
+                                    That doesn't look like a valid directory path.
                                 </p>
                             )}
                         </div>
@@ -522,44 +731,26 @@ export default function Home() {
                     width={380}
                 >
                     <div className="space-y-4">
-                        <label
-                            role="button"
-                            tabIndex={0}
+                        <button
+                            type="button"
                             className="default"
+                            onClick={chooseImagePaths}
                             style={{
                                 display: "inline-flex",
                                 alignItems: "center",
                                 gap: 6,
                             }}
                         >
-                            <input
-                                type="file"
-                                accept=".png,image/png"
-                                multiple
-                                style={{ display: "none" }}
-                                onChange={(e) => {
-                                    const files = e.target.files
-                                    if (!files) return
-                                    const valid = filterPngFiles(files)
-                                    const rejected = files.length - valid.length
-                                    setUploadedFiles(valid.map((f) => f.name))
-                                    setUploadError(
-                                        rejected > 0
-                                            ? `${rejected} file(s) skipped - only .png files are allowed.`
-                                            : ""
-                                    )
-                                }}
-                            />
                             Browse...
-                        </label>
+                        </button>
 
                         {uploadedFiles.length > 0 && (
                             <ul
                                 className="tree-view has-container"
                                 style={{ maxHeight: 160, overflow: "auto" }}
                             >
-                                {uploadedFiles.map((name) => (
-                                    <li key={name}>{name}</li>
+                                {uploadedFiles.map((path) => (
+                                    <li key={path}>{path}</li>
                                 ))}
                             </ul>
                         )}
