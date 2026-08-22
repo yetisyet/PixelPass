@@ -1,5 +1,3 @@
-from status_manager import load_vault, save_vault
-from structs import Entry, Vault, Config, StorageOptions
 import json
 from PIL import Image
 import os
@@ -8,117 +6,24 @@ from typing import TypedDict
 
 config_file = "config.json"
 
-def check_master_password(config: Config, password: str):
-    """
-    We check the master password is accurate, and then set the 
-    majority and totals inside the config.
-    """
-
-    # To check if the master password works, we attempt to decrypt 
-    # and get a vault back, if we were able to decrypt, assume it works!
-
-    try:
-        vault = load_vault(config, password)
-        config['storage_options']['majority'] = vault['majority_images']
-        config['storage_options']['total'] = vault['total_images']
-    except:
-        # Something went wrong when loading the vault, we are assuming
-        # that it was an incorrect master password.
-        return 1
-
-    return 0
-
-def get_password(id: int, config: Config, password: str):
-    """
-    Get the password from a specific entry.
-    """
-    
-    # Load vault state
-    vault: Vault = load_vault(config, password)
-
-    passwords: list[Entry] = vault['password_entries']
-
-    for entry in passwords:
-        if entry['id'] == id:
-                return entry['password']
-
-    return None
-
-
-def add_entry(entry: Entry, config: Config, password: str):
-    """
-    Add an entry to the vault.
-    """
-
-    # Load vault state
-    vault: Vault = load_vault(config, password)
-
-    passwords: list[Entry] = vault['password_entries']
-
-    # Check if entry already exists
-    exists = False
-    for i, existing_entry in enumerate(passwords):
-        if existing_entry['id'] == entry['id']:
-            # This already exists, so we should just update it.
-            exists = True
-            passwords[i] = entry
-
-    if not exists:
-            passwords.append(entry)
-
-    # At this point, the password list will now have the new (or updated) entry
-    save_vault(vault, config, password)
-
-def remove_entry(entry_id: int, config: Config, password: str):
-    """
-    Remove an entry from the vault.
-    """
-
-    # Load vault state
-    vault: Vault = load_vault(config, password)
-
-    vault["password_entries"] = [
-        entry
-        for entry in vault["password_entries"]
-        if entry["id"] != entry_id
-    ]
-
-    save_vault(vault, config, password)
-
-
-def get_services(config: Config, password: str):
-    """
-    Get all of the existing password entries with passwords redacted.
-    """
-
-    # Load vault state
-    vault: Vault = load_vault(config, password)
-
-    passwords: list[Entry] = vault['password_entries']
-
-    # clear out the passwords
-    for entry in passwords:
-        entry['password'] = ""
-
-    return passwords
-
-
-def init_vault(mode: int):
+def init_vault(mode: int, total: int, majority: int):
     """1: User will pass images (not paths) to seed with
        2: User will choose folder (and send the file path!!)
        3: User will pass images (paths) to seed with
        4: Randomly choose files on your PC 
     """
     # check if in recover mode -> read only
-    s_ops: StorageOptions = {"individual_passwords" : False, "majority": 1, "total": 1, "read_only": False}
+    s_ops: StorageOptions = {"individual_passwords" : False, "majority": majority, "total": total, "read_only": False}
     settings = {
         "mode" : mode,
         "pool" : [],
         "storage_options": s_ops
     }
+    initial: Vault = {"total_images" : total, "majority_images" : majority, "password_entries" : [], "passcode_entries" : [], "passkey_entries" : []}
     with open(config_file, "w") as config:
         config.write(json.dumps(settings))
-    return 0    
+    
+    return initial
 
 def populate_vault_path_images(folders: list[str]):
     """this is like a list of file paths that we make our pool from"""
@@ -126,12 +31,13 @@ def populate_vault_path_images(folders: list[str]):
     try:
         config = open(config_file)
         settings = json.load(config.read())
+        config.close()
         # checking everything is a png
         non_image_count = 0
         for file in folders:
             if(os.path.isfile(file)):
                 try:
-                    pic = Image.open(file, formats = ["PNG"])
+                    Image.open(file, formats = ["PNG"])
                 except:
                     non_image_count += 1
         if non_image_count != 0:
@@ -141,7 +47,6 @@ def populate_vault_path_images(folders: list[str]):
 
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
-        set_majority(folders.count)
         set_total(folders.count)
     except:
         return (-1)
@@ -162,7 +67,7 @@ def populate_vault_path_folder(path: str):
         for file in dir:
             if(os.path.isfile(file)):
                 try:
-                    pic = Image.open(file, formats = ["PNG"])
+                    Image.open(file, formats = ["PNG"])
                     image_count += 1
                 except:
                     non_image_count += 1
@@ -172,7 +77,6 @@ def populate_vault_path_folder(path: str):
         settings["pool"] = [path]
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
-        set_majority(image_count)
         set_total(image_count)
         return 0
     except:
@@ -193,7 +97,6 @@ def populate_vault_raw(images: list[Image]):
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
         set_total(images.count)
-        set_majority(images.count)
         return 0
     except:
         return -1
@@ -203,8 +106,6 @@ def populate_vault_self():
     os.mkdir("images")
     with zipfile.ZipFIle("photos.zip") as zip_ref:
         zip_ref.extractall("images")
-<<<<<<< HEAD
-    set_majority(24)
     set_total(24)
     return 0
 
@@ -229,6 +130,3 @@ def set_total(num: int):
             config.write(json.dumps(settings))
     except:
         return -1
-=======
-    return 0
->>>>>>> a260772ff3a4ec2a9bfe7e91636a9c1896783fb4
