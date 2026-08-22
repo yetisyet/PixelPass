@@ -91,13 +91,12 @@ const startBackend = () => {
 
     if (
       Number.isInteger(response.mode)
-      && response.mode >= 0
-      && response.mode <= 5
+      && (response.mode === -1 || (response.mode >= 1 && response.mode <= 5))
       && response.elecID === undefined
       && response.action === undefined
     ) {
       resolveBackendStartup({
-        configured: response.mode !== 0,
+        configured: response.mode !== -1,
         mode: response.mode,
       });
       return;

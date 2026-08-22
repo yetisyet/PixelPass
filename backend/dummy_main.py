@@ -31,19 +31,21 @@ ENTRIES: dict[int, dict[str, Any]] = {
 try:
     PREDETERMINED_MODE = int(os.environ.get("PIXELPASS_DUMMY_MODE", "1"))
 except ValueError:
-    PREDETERMINED_MODE = 0
+    PREDETERMINED_MODE = -1
 
-if PREDETERMINED_MODE not in range(0, 6):
-    PREDETERMINED_MODE = 1
+if PREDETERMINED_MODE != -1 and PREDETERMINED_MODE not in range(1, 6):
+    PREDETERMINED_MODE = -1
 
 DUMMY_CONFIG: dict[str, Any] = {
     "mode": PREDETERMINED_MODE,
     "vaultPassword": (
         os.environ.get("PIXELPASS_DUMMY_PASSWORD", "Password1!")
-        if PREDETERMINED_MODE != 0
+        if PREDETERMINED_MODE != -1
         else None
     ),
+    "majority": None,
     "sourceType": None,
+    "total": None,
 }
 
 next_entry_id = 3
@@ -97,70 +99,61 @@ def require_bool(data: dict[str, Any], field: str) -> bool:
     return value
 
 
-def require_mode(data: dict[str, Any]) -> int:
-    mode = data.get("mode")
+def require_setup_integer(request: dict[str, Any], field: str) -> int:
+    value = request.get(field)
+    if isinstance(value, bool) or not isinstance(value, int) or value < 1:
+        raise RequestError(f"{field} must be a positive integer")
+    return value
+
+
+def require_setup_mode(request: dict[str, Any]) -> int:
+    mode = request.get("Mode")
     if isinstance(mode, bool) or not isinstance(mode, int) or mode not in range(1, 6):
-        raise RequestError("data.mode must be an integer from 1 to 5")
+        raise RequestError("Mode must be an integer from 1 to 5")
     return mode
 
 
-def validate_image_source(source: dict[str, Any], source_type: str) -> None:
-    if source.get("type") != source_type:
-        raise RequestError(f"data.source.type must be {source_type}")
-
-    images = source.get("images")
+def validate_setup_images(request: dict[str, Any]) -> None:
+    images = request.get("Data")
     if not isinstance(images, list) or not images:
-        raise RequestError("data.source.images must be a non-empty array")
+        raise RequestError("Data must be a non-empty array")
 
     for index, image in enumerate(images):
         if not isinstance(image, dict):
-            raise RequestError(f"data.source.images[{index}] must be an object")
+            raise RequestError(f"Data[{index}] must be an object")
         if not isinstance(image.get("name"), str) or not image["name"]:
-            raise RequestError(
-                f"data.source.images[{index}].name must be a non-empty string"
-            )
+            raise RequestError(f"Data[{index}].name must be a non-empty string")
         if not isinstance(image.get("dataBase64"), str) or not image["dataBase64"]:
             raise RequestError(
-                f"data.source.images[{index}].dataBase64 must be a non-empty string"
+                f"Data[{index}].dataBase64 must be a non-empty string"
             )
 
 
-def validate_source(mode: int, raw_source: Any) -> dict[str, Any]:
-    if mode == 4 and raw_source is None:
-        return {"type": "selfPopulate"}
-
-    if not isinstance(raw_source, dict):
-        raise RequestError("data.source must be an object")
-
+def validate_setup_payload(mode: int, request: dict[str, Any]) -> str:
     if mode == 1:
-        validate_image_source(raw_source, "uploadedImages")
+        validate_setup_images(request)
+        return "uploadedImages"
     elif mode == 2:
-        if raw_source.get("type") != "directory":
-            raise RequestError("data.source.type must be directory")
-        directory_path = raw_source.get("directoryPath")
+        directory_path = request.get("Path")
         if not isinstance(directory_path, str) or not directory_path:
-            raise RequestError(
-                "data.source.directoryPath must be a non-empty string"
-            )
+            raise RequestError("Path must be a non-empty string")
+        return "directory"
     elif mode == 3:
-        if raw_source.get("type") != "imagePaths":
-            raise RequestError("data.source.type must be imagePaths")
-        image_paths = raw_source.get("imagePaths")
+        image_paths = request.get("Paths")
         if (
             not isinstance(image_paths, list)
             or not image_paths
             or any(not isinstance(path, str) or not path for path in image_paths)
         ):
-            raise RequestError(
-                "data.source.imagePaths must be a non-empty array of strings"
-            )
+            raise RequestError("Paths must be a non-empty array of strings")
+        return "imagePaths"
     elif mode == 4:
-        if raw_source.get("type") != "selfPopulate":
-            raise RequestError("data.source.type must be selfPopulate")
+        return "selfPopulate"
     elif mode == 5:
-        validate_image_source(raw_source, "recoveryImages")
+        validate_setup_images(request)
+        return "recoveryImages"
 
-    return raw_source
+    raise RequestError("Mode must be an integer from 1 to 5")
 
 
 def handle_request(request: dict[str, Any]) -> dict[str, Any]:
@@ -169,10 +162,9 @@ def handle_request(request: dict[str, Any]) -> dict[str, Any]:
     global next_entry_id, vault_unlocked
 
     action = request.get("action")
-    base_response = {
-        "elecID": request.get("elecID"),
-        "action": action,
-    }
+    base_response = {"elecID": request.get("elecID")}
+    if "action" in request:
+        base_response["action"] = action
 
     try:
         if action == "startup":
@@ -181,45 +173,57 @@ def handle_request(request: dict[str, Any]) -> dict[str, Any]:
                 "success": True,
                 "data": {
                     "mode": DUMMY_CONFIG["mode"],
-                    "configured": DUMMY_CONFIG["mode"] != 0,
+                    "configured": DUMMY_CONFIG["mode"] != -1,
                     "unlocked": vault_unlocked,
                 },
             }
 
-        if action == "initialize":
-            if DUMMY_CONFIG["mode"] != 0:
+        if "Mode" in request:
+            if DUMMY_CONFIG["mode"] != -1:
                 raise RequestError("PixelPass has already been initialized")
 
-            data = require_data(request)
-            mode = require_mode(data)
-            password = require_text(data, "vaultPassword")
-            source = validate_source(mode, data.get("source"))
+            elec_id = request.get("elecID")
+            if not isinstance(elec_id, str) or not elec_id:
+                raise RequestError("elecID must be a non-empty string")
+
+            mode = require_setup_mode(request)
+            majority = require_setup_integer(request, "Majority")
+            total = require_setup_integer(request, "Total")
+            if total > 24:
+                raise RequestError("Total cannot exceed 24")
+            if majority > total:
+                raise RequestError("Majority cannot be greater than Total")
+            password = request.get("Password")
+            if not isinstance(password, str) or not password.strip():
+                raise RequestError("Password must be a non-empty string")
+            source_type = validate_setup_payload(mode, request)
 
             DUMMY_CONFIG.update(
                 {
+                    "majority": majority,
                     "mode": mode,
+                    "total": total,
                     "vaultPassword": password,
-                    "sourceType": source["type"],
+                    "sourceType": source_type,
                 }
             )
             vault_unlocked = True
             print(
                 "Received initialization: "
-                f"mode={mode}, source={source['type']}, password=[received]",
+                f"elecID={elec_id}, Mode={mode}, Majority={majority}, "
+                f"Total={total}, Password=[received], source={source_type}",
                 file=sys.stderr,
                 flush=True,
             )
             return {
                 **base_response,
                 "success": True,
-                "data": {
-                    "mode": mode,
-                    "sourceType": source["type"],
-                },
+                "Mode": mode,
+                "sourceType": source_type,
             }
 
         if action == "unlock":
-            if DUMMY_CONFIG["mode"] == 0:
+            if DUMMY_CONFIG["mode"] == -1:
                 raise RequestError("PixelPass has not been initialized")
 
             data = require_data(request)
@@ -343,9 +347,12 @@ def main_server() -> None:
                 "error": "Unexpected backend error",
             }
 
+        request_kind = response.get("action")
+        if isinstance(request, dict) and "Mode" in request:
+            request_kind = f"setup mode {request.get('Mode')}"
         print(
-            f"Handled action {response.get('action')} "
-            f"for {response.get('elecID')}: success={response.get('success')}",
+            f"Handled {request_kind} for {response.get('elecID')}: "
+            f"success={response.get('success')}",
             file=sys.stderr,
             flush=True,
         )

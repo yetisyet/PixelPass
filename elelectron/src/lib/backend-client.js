@@ -28,7 +28,7 @@ export async function sendBackendRequest(request) {
     throw new Error("Backend response must be a JSON object.")
   }
 
-  if (response.action !== request.action) {
+  if ("action" in request && response.action !== request.action) {
     throw new Error(
       `Response action must be "${request.action}", received "${response.action ?? "missing"}".`,
     )
