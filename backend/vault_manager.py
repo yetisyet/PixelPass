@@ -96,10 +96,7 @@ def init_vault(mode: int):
     }
     with open(config_file, "w") as config:
         config.write(json.dumps(settings))
-
     return 0    
-
-
 
 def populate_vault_path_images(folders: list[str]):
     """this is like a list of file paths that we make our pool from"""
@@ -113,7 +110,6 @@ def populate_vault_path_images(folders: list[str]):
             if(os.path.isfile(file)):
                 try:
                     pic = Image.open(file, formats = ["PNG"])
-                    image_count += 1
                 except:
                     non_image_count += 1
         if non_image_count != 0:
@@ -124,7 +120,6 @@ def populate_vault_path_images(folders: list[str]):
             config.write(json.dumps(settings))
     except:
         return (-1)
-
     return 0
 
 def populate_vault_path_folder(path: str):
@@ -180,6 +175,3 @@ def populate_vault_self():
     with zipfile.ZipFIle("photos.zip") as zip_ref:
         zip_ref.extractall("images")
     return 0
-def export_vault():
-    """actually return image data to frontend"""
-
