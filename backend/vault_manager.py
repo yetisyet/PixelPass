@@ -71,7 +71,6 @@ def add_entry(entry: Entry, config: Config, password: str):
 
     # At this point, the password list will now have the new (or updated) entry
     save_vault(vault, config, password)
-    return 0
 
 
 def remove_entry(entry_id: int, config: Config, password: str):
@@ -87,7 +86,6 @@ def remove_entry(entry_id: int, config: Config, password: str):
     ]
 
     save_vault(vault, config, password)
-    return 0
 
 
 def get_services(config: Config, password: str):
@@ -212,13 +210,10 @@ def populate_vault_raw(images: list[Image]):
         if not os.path.exists("images"):
             os.mkdir("images")
 
-        saved_paths = []
         for image in images:
-            image_path = Path("images") / image.filename
-            image.save(image_path)
-            saved_paths.append(str(image_path))
+            image.save("images/" + image.filename)
 
-        settings["pool"] = saved_paths
+        settings["pool"] = get_pool_from_folder("images")
 
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))

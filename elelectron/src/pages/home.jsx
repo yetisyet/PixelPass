@@ -210,8 +210,8 @@ export default function Home() {
             const image = pastedImagePayload(pastedImage)
             if (!image) throw new Error("Paste an image before initializing.")
             return {
-                data: [image.dataBase64],
-                mode: selectedMode,
+                Data: [image],
+                Mode: selectedMode,
             }
         }
 
@@ -220,8 +220,8 @@ export default function Home() {
                 throw new Error("Choose or enter a valid directory path.")
             }
             return {
-                mode: selectedMode,
-                path: customDirPath,
+                Mode: selectedMode,
+                Path: customDirPath,
             }
         }
 
@@ -230,13 +230,13 @@ export default function Home() {
                 throw new Error("Choose at least one image path.")
             }
             return {
-                mode: selectedMode,
-                paths: uploadedFiles,
+                Mode: selectedMode,
+                Paths: uploadedFiles,
             }
         }
 
         if (selectedMode === 4) {
-            return { mode: selectedMode }
+            return { Mode: selectedMode }
         }
 
         throw new Error("Choose a vault avatar method first.")
@@ -267,11 +267,11 @@ export default function Home() {
                 const parsedMajority = Number(majority)
                 const parsedTotal = Number(total)
 
-                if (!Number.isInteger(parsedMajority) || parsedMajority < 2) {
-                    throw new Error("Majority must be a whole number of at least 2.")
+                if (!Number.isInteger(parsedMajority) || parsedMajority < 1) {
+                    throw new Error("Majority must be a positive whole number.")
                 }
-                if (!Number.isInteger(parsedTotal) || parsedTotal < 2) {
-                    throw new Error("Total must be a whole number of at least 2.")
+                if (!Number.isInteger(parsedTotal) || parsedTotal < 1) {
+                    throw new Error("Total must be a positive whole number.")
                 }
                 if (parsedTotal > 24) {
                     throw new Error("Total cannot exceed 24.")
@@ -282,13 +282,14 @@ export default function Home() {
 
                 response = await sendBackendRequest({
                     ...initialization,
-                    majority: parsedMajority,
-                    password: masterkey,
-                    total: parsedTotal,
+                    Majority: parsedMajority,
+                    Password: masterkey,
+                    Total: parsedTotal,
                 })
             } else {
                 response = await sendBackendRequest({
-                    password: masterkey,
+                    action: "unlock",
+                    data: { vaultPassword: masterkey },
                 })
             }
 
@@ -565,7 +566,7 @@ export default function Home() {
                                             <input
                                                 disabled={isSubmitting}
                                                 max="24"
-                                                min="2"
+                                                min="1"
                                                 required
                                                 type="number"
                                                 value={majority}
@@ -580,7 +581,7 @@ export default function Home() {
                                             <input
                                                 disabled={isSubmitting}
                                                 max="24"
-                                                min="2"
+                                                min="1"
                                                 required
                                                 type="number"
                                                 value={total}
