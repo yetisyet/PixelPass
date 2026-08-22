@@ -49,19 +49,19 @@ const rejectAllBackendRequests = (error) => {
   }
 };
 
-const getDummyBackendPath = () => {
+const getBackendPath = () => {
   if (app.isPackaged) {
-    return path.join(process.resourcesPath, 'backend', 'dummy_main.py');
+    return path.join(process.resourcesPath, 'backend', 'main.py');
   }
 
-  return path.resolve(app.getAppPath(), '..', 'backend', 'dummy_main.py');
+  return path.resolve(app.getAppPath(), '..', 'backend', 'main.py');
 };
 
 const startBackend = () => {
   if (backendProcess) return;
 
   backendStartupState = null;
-  const backendPath = getDummyBackendPath();
+  const backendPath = getBackendPath();
   const pythonCommand = process.env.PIXELPASS_PYTHON
     || (process.platform === 'win32' ? 'python' : 'python3');
   const child = spawn(pythonCommand, ['-u', backendPath], {

@@ -210,8 +210,8 @@ export default function Home() {
             const image = pastedImagePayload(pastedImage)
             if (!image) throw new Error("Paste an image before initializing.")
             return {
-                Data: [image],
-                Mode: selectedMode,
+                data: [image],
+                mode: selectedMode,
             }
         }
 
@@ -220,8 +220,8 @@ export default function Home() {
                 throw new Error("Choose or enter a valid directory path.")
             }
             return {
-                Mode: selectedMode,
-                Path: customDirPath,
+                mode: selectedMode,
+                path: customDirPath,
             }
         }
 
@@ -230,13 +230,13 @@ export default function Home() {
                 throw new Error("Choose at least one image path.")
             }
             return {
-                Mode: selectedMode,
-                Paths: uploadedFiles,
+                mode: selectedMode,
+                paths: uploadedFiles,
             }
         }
 
         if (selectedMode === 4) {
-            return { Mode: selectedMode }
+            return { mode: selectedMode }
         }
 
         throw new Error("Choose a vault avatar method first.")
@@ -282,14 +282,13 @@ export default function Home() {
 
                 response = await sendBackendRequest({
                     ...initialization,
-                    Majority: parsedMajority,
-                    Password: masterkey,
-                    Total: parsedTotal,
+                    majority: parsedMajority,
+                    password: masterkey,
+                    total: parsedTotal,
                 })
             } else {
                 response = await sendBackendRequest({
-                    action: "unlock",
-                    data: { vaultPassword: masterkey },
+                    password: masterkey,
                 })
             }
 
