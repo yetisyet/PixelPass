@@ -29,7 +29,7 @@ ENTRIES: dict[int, dict[str, Any]] = {
 }
 
 try:
-    PREDETERMINED_MODE = int(os.environ.get("PIXELPASS_DUMMY_MODE", "0"))
+    PREDETERMINED_MODE = int(os.environ.get("PIXELPASS_DUMMY_MODE", "1"))
 except ValueError:
     PREDETERMINED_MODE = 0
 
