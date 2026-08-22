@@ -102,23 +102,24 @@ def get_services(config: Config, password: str):
 
     return passwords
 
-
-def init_vault(mode: int):
+def init_vault(mode: int, total: int, majority: int):
     """1: User will pass images (not paths) to seed with
        2: User will choose folder (and send the file path!!)
        3: User will pass images (paths) to seed with
-       4: Randomly choose files on your PC 
+       4: Randomly choose files on yogitur PC 
     """
     # check if in recover mode -> read only
-    s_ops: StorageOptions = {"individual_passwords" : False, "majority": 1, "total": 1, "read_only": False}
+    s_ops: StorageOptions = {"individual_passwords" : False, "majority": majority, "total": total, "read_only": False}
     settings = {
         "mode" : mode,
         "pool" : [],
         "storage_options": s_ops
     }
+    initial: Vault = {"total_images" : total, "majority_images" : majority, "password_entries" : [], "passcode_entries" : [], "passkey_entries" : []}
     with open(config_file, "w") as config:
         config.write(json.dumps(settings))
-    return 0    
+    
+    return initial
 
 def populate_vault_path_images(folders: list[str]):
     """this is like a list of file paths that we make our pool from"""
@@ -126,12 +127,13 @@ def populate_vault_path_images(folders: list[str]):
     try:
         config = open(config_file)
         settings = json.load(config.read())
+        config.close()
         # checking everything is a png
         non_image_count = 0
         for file in folders:
             if(os.path.isfile(file)):
                 try:
-                    pic = Image.open(file, formats = ["PNG"])
+                    Image.open(file, formats = ["PNG"])
                 except:
                     non_image_count += 1
         if non_image_count != 0:
@@ -141,7 +143,6 @@ def populate_vault_path_images(folders: list[str]):
 
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
-        set_majority(folders.count)
         set_total(folders.count)
     except:
         return (-1)
@@ -162,7 +163,7 @@ def populate_vault_path_folder(path: str):
         for file in dir:
             if(os.path.isfile(file)):
                 try:
-                    pic = Image.open(file, formats = ["PNG"])
+                    Image.open(file, formats = ["PNG"])
                     image_count += 1
                 except:
                     non_image_count += 1
@@ -172,7 +173,6 @@ def populate_vault_path_folder(path: str):
         settings["pool"] = [path]
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
-        set_majority(image_count)
         set_total(image_count)
         return 0
     except:
@@ -193,7 +193,6 @@ def populate_vault_raw(images: list[Image]):
         with open(config_file, "w") as config:
             config.write(json.dumps(settings))
         set_total(images.count)
-        set_majority(images.count)
         return 0
     except:
         return -1
@@ -203,8 +202,6 @@ def populate_vault_self():
     os.mkdir("images")
     with zipfile.ZipFIle("photos.zip") as zip_ref:
         zip_ref.extractall("images")
-<<<<<<< HEAD
-    set_majority(24)
     set_total(24)
     return 0
 
@@ -229,6 +226,3 @@ def set_total(num: int):
             config.write(json.dumps(settings))
     except:
         return -1
-=======
-    return 0
->>>>>>> a260772ff3a4ec2a9bfe7e91636a9c1896783fb4
