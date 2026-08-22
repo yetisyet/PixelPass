@@ -210,7 +210,7 @@ export default function Home() {
             const image = pastedImagePayload(pastedImage)
             if (!image) throw new Error("Paste an image before initializing.")
             return {
-                data: [image],
+                data: [image.dataBase64],
                 mode: selectedMode,
             }
         }
@@ -267,11 +267,11 @@ export default function Home() {
                 const parsedMajority = Number(majority)
                 const parsedTotal = Number(total)
 
-                if (!Number.isInteger(parsedMajority) || parsedMajority < 1) {
-                    throw new Error("Majority must be a positive whole number.")
+                if (!Number.isInteger(parsedMajority) || parsedMajority < 2) {
+                    throw new Error("Majority must be a whole number of at least 2.")
                 }
-                if (!Number.isInteger(parsedTotal) || parsedTotal < 1) {
-                    throw new Error("Total must be a positive whole number.")
+                if (!Number.isInteger(parsedTotal) || parsedTotal < 2) {
+                    throw new Error("Total must be a whole number of at least 2.")
                 }
                 if (parsedTotal > 24) {
                     throw new Error("Total cannot exceed 24.")
@@ -565,7 +565,7 @@ export default function Home() {
                                             <input
                                                 disabled={isSubmitting}
                                                 max="24"
-                                                min="1"
+                                                min="2"
                                                 required
                                                 type="number"
                                                 value={majority}
@@ -580,7 +580,7 @@ export default function Home() {
                                             <input
                                                 disabled={isSubmitting}
                                                 max="24"
-                                                min="1"
+                                                min="2"
                                                 required
                                                 type="number"
                                                 value={total}

@@ -1,15 +1,17 @@
 # the main python file
 import json
 import base64
+from io import BytesIO
+
 import vault_manager
 import status_manager
 from structs import Vault, Entry, Config
-
+from PIL import Image
 """"
     Function that runs the entire backend.
-    Acts like a server, waiting for the frontend to send something. 
+    Acts like a server, waiting for the frontend to send something.
     This function WILL NOT initiate (return something) unless initiated first. (NIUI)
-    See google doc for what this funciton will send 
+    See google doc for what this funciton will send
 """
 
 mode = -1
@@ -23,7 +25,7 @@ mPassword = "pee"
     if there is a config file) sets the mode ( a global variable) to whatever is specified
     this function does not take in anything, only sets the mode variable and returns nothing
     if mode = -1 this means that there is no config file and hence vault_init needs to be called
-    if mode != -1, this means that there is a mode and it goes as normal. 
+    if mode != -1, this means that there is a mode and it goes as normal.
 """
 
 
@@ -33,7 +35,7 @@ def check_config():
         with open("config.json") as f:
             raw = json.loads(f.read())
             parsedMode = raw["mode"]
-            if 0 < parsedMode < 6:  # 1-5 range
+            if 0 < parsedMode < 6 and raw.get("pool"):  # 1-5 range
                 mode = parsedMode
             else:
                 mode = -1
@@ -128,8 +130,15 @@ def startup():  # should return a config instance
     returnVal = json.loads(input())
     mPassword = returnVal["password"]
     if mode == -1:
+        total = returnVal["total"]
+        majority = returnVal["majority"]
+        if total < 2 or majority < 2:
+            raise ValueError("Total and majority must both be at least 2")
+        if majority > total:
+            raise ValueError("Majority cannot be greater than total")
+
         vault = vault_manager.init_vault(
-            returnVal["mode"], returnVal["total"], returnVal["majority"]
+            returnVal["mode"], total, majority
         )
         mode_populate(returnVal)
         conf = get_config()
@@ -137,7 +146,7 @@ def startup():  # should return a config instance
         success = True
     else:
         conf = get_config()
-        success = vault_manager.check_master_password(conf, mPassword) 
+        success = vault_manager.check_master_password(conf, mPassword)
     print(json.dumps({"success": success, "elecID": returnVal["elecID"]}))
 
     return conf
@@ -155,10 +164,26 @@ def mode_populate(returnVal):
     mode = returnVal["mode"]
     match mode:
         case 1:
-            images = []
+            source_images = []
             for obj in returnVal["data"]:
-                images.append(Image.open(base64.b64decode(obj)))
-            vault_manager.populate_vault_raw(images)
+                image_bytes = base64.b64decode(obj, validate=True)
+                with Image.open(BytesIO(image_bytes)) as image:
+                    image.load()
+                    decoded_image = image.copy()
+
+                source_images.append(decoded_image)
+
+            if not source_images:
+                raise ValueError("At least one pasted image is required")
+
+            images = []
+            for index in range(returnVal["total"]):
+                image = source_images[index % len(source_images)].copy()
+                image.filename = f"pasted-image-{index + 1}.png"
+                images.append(image)
+
+            if vault_manager.populate_vault_raw(images) != 0:
+                raise RuntimeError("Unable to save pasted images")
         case 2:
             vault_manager.populate_vault_path_folder(returnVal["path"])
         case 3:
