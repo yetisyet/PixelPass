@@ -140,6 +140,10 @@ def startup():  # should return a config instance
         success = vault_manager.check_master_password(conf, mPassword) 
     print(json.dumps({"success": success, "elecID": returnVal["elecID"]}))
 
+    if not success:
+        return startup()
+
+    # This was successful
     return conf
 
 
