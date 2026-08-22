@@ -125,7 +125,9 @@ function PixelPassWindow({
 }
 
 export default function Home() {
-    const navigate = useNavigate()
+
+
+  const navigate = useNavigate()
 
     // --- Main "Welcome to PixelPass" window state ---
     const [isMinimized, setIsMinimized] = useState(false)
@@ -206,7 +208,9 @@ export default function Home() {
             setAvatarPath("")
         }
     }
-
+    useEffect(() => {
+        
+    }, [])
     return (
         <main
             className="pixelpass-page pixelpass-home-page"
