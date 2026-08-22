@@ -6,7 +6,8 @@ from dataclasses import dataclass
 class Entry:
     """class for holding the entries"""
 
+    id: int
     service_name: str
     username: str
     password: str
-    has_password: bool
+    is_fav: bool
