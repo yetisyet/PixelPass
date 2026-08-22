@@ -1263,3 +1263,7 @@ input {
     animation: none;
   }
 }
+
+* {
+  cursor: url('https://cdn.cursors-4u.net/previews/windows-7-pointer-f9355ed9-32.webp') 32 32, auto !important;
+}
