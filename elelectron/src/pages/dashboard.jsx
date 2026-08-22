@@ -13,7 +13,7 @@ import {
   X,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-
+import background from "../lib/background.jpg"
 import AddPasswordDialog from "@/components/ui/add_password"
 import EditPasswordDialog from "@/components/ui/edit_password"
 import PasswordRevealDialog from "@/components/ui/password_reveal"
@@ -384,7 +384,15 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="pixelpass-page pixelpass-vault-page">
+      <main
+        className="pixelpass-page pixelpass-home-page"
+        style={{
+          backgroundImage: `url(${background})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
       <section className="window active glass pixelpass-main-window">
         <div className="title-bar">
           <div className="title-bar-text">
