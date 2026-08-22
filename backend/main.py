@@ -1,4 +1,6 @@
 # the main python file
+import json  # very important!!
+
 try:
     from structs import *
 except ImportError:
@@ -8,22 +10,31 @@ except ImportError:
 # except ImportError:
 #   print("Unable to import scripts, something's gone really wrong")
 
+""""
+    Function that runs the entire backend.
+    Acts like a server, waiting for the frontend to send something. 
+    This function WILL NOT initiate (return something) unless initiated first. (NIUI)
+    See google doc for what this funciton will send 
+"""
+
 
 def main_server():
     while 1:  # add something
-        usr_input = input()
-        case = int(usr_input[0])
-        # gets the first element of the string, which SHOULD be the enum
-        match case:
-            case 0:
-                print("piss")
-            case 1:
-                print("shit")
-            case 2:
-                print("2")
-            case 3:
-                print("3")
+        usrInput = json.loads(input())
+        action = usrInput["action"]
+        match action:
+            case "create_master_password":
+                print("create_master_password")
+            case "login_master_password":
+                print("login_master_password")
+            case "create_entry":
+                print("create_entry")
+            case "retrieve_all_passwords":
+                print("retrieve_all_passwords")
+            case _:
+                print("ERR, unknown operation")  # REALLY shouldn't happen!!
 
 
+# makes sure that it only runs when it is not called from another function, hence the __init__ thing
 if __name__ == "__main__":
     main_server()
