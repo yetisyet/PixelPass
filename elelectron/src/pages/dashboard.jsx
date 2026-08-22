@@ -482,7 +482,7 @@ export default function Dashboard() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
-        }} 
+        }}
       >
       <section
         className="window active glass pixelpass-main-window"
