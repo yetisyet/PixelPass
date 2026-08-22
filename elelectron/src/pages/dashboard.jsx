@@ -13,18 +13,65 @@ import {
   X,
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
-
+import background from "../lib/background.jpg"
 import AddPasswordDialog from "@/components/ui/add_password"
 import EditPasswordDialog from "@/components/ui/edit_password"
 import PasswordRevealDialog from "@/components/ui/password_reveal"
 import RemovePasswordDialog from "@/components/ui/remove_password"
 import { sendBackendRequest } from "@/lib/backend-client"
 
+function PixelStarIcon(props) {
+  return (
+    <img
+      width="16"
+      height="16"
+      src="https://img.icons8.com/color/48/pixel-star.png"
+      alt="pixel-star"
+      {...props}
+    />
+  )
+}
+
+function KeySymbol(props) {
+  return (
+    <img
+      width="16"
+      height="16"
+      src="https://img.icons8.com/material-sharp/24/key--v2.png"
+      alt="key"
+      {...props}
+    />
+  )
+}
+
+function OpenBook(props) {
+  return (
+    <img
+      width="16"
+      height="16"
+      src="https://img.icons8.com/ios/50/open-book--v1.png"
+      alt="book"
+      {...props}
+    />
+  )
+}
+function NoteWriting(props) {
+  return (
+    <img
+      width="16"
+      height="16"
+      src="https://img.icons8.com/ios-glyphs/30/create-new.png"
+      alt="notes"
+      {...props}
+    />
+  )
+}
+
+
 const categories = [
-  { id: "all", label: "All items", Icon: PawPrint },
-  { id: "favorites", label: "Favorites", Icon: Star },
-  { id: "logins", label: "Logins", Icon: KeyRound },
-  { id: "secure-notes", label: "Secure notes", Icon: StickyNote },
+  { id: "all", label: "All items", Icon: OpenBook },
+  { id: "favorites", label: "Favorites", Icon: PixelStarIcon },
+  { id: "logins", label: "Logins", Icon: KeySymbol },
 ]
 
 const demoEntries = [
@@ -43,6 +90,8 @@ const demoEntries = [
     demoPassword: "demo-discord-password-42",
   },
 ]
+
+
 
 function normalizeEntries(entries) {
   return entries.map((entry, index) => ({
@@ -155,7 +204,7 @@ export default function Dashboard() {
       setPasswords(demoEntries)
       setIsDemoMode(true)
       setError(loadError.message)
-      setStatusMessage("backend is hiding T~T — demo paws loaded >w<")
+      setStatusMessage("Backend is hiding T~T — demo paws loaded >w<")
     } finally {
       if (requestId === listRequestId.current) setIsLoading(false)
     }
@@ -384,7 +433,15 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="pixelpass-page pixelpass-vault-page">
+      <main
+        className="pixelpass-page pixelpass-home-page"
+        style={{
+          backgroundImage: `url(${background})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
+      >
       <section className="window active glass pixelpass-main-window">
         <div className="title-bar">
           <div className="title-bar-text">
@@ -418,9 +475,9 @@ export default function Dashboard() {
           <div className="pixelpass-explorer">
             <aside className="pixelpass-sidebar">
               <div className="pixelpass-sidebar-heading">
-                <PawPrint aria-hidden="true" />
+                <img src="https://img.icons8.com/color/18/000000/remote-desktop.png" style={{ scale: "150%" }}/>
                 <div>
-                  <strong>saved password nyah</strong>
+                  <strong>Saved passwords</strong>
                   <span>
                     {passwords.length} {passwords.length === 1 ? "login" : "logins"}
                   </span>
@@ -445,8 +502,7 @@ export default function Dashboard() {
               </nav>
 
               <div className="pixelpass-sidebar-note">
-                <PawPrint aria-hidden="true" />
-                <p>secrets stay covered until u click Reveal ^w^</p>
+              <p>secrets stay covered until u click Reveal ^w^ <img width="16" height="16" src="https://img.icons8.com/forma-bold-filled/24/lock-2.png" alt="lock-2" style={{ marginLeft: "16em" }} /> </p>
               </div>
             </aside>
 
