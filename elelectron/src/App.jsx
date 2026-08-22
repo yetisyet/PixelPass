@@ -1,20 +1,46 @@
-import { Route, Routes, useNavigate } from "react-router-dom"
+import { Route, Routes, useLocation, useNavigate } from "react-router-dom"
+import { HomeIcon, KeyRound, PawPrint } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
 import Dashboard from "@/pages/dashboard"
 import Home from "@/pages/home"
 import NotFound from "@/pages/notfound"
 
+const navigation = [
+  { label: "Home", path: "/", Icon: HomeIcon },
+  { label: "Vault", path: "/dashboard", Icon: KeyRound },
+]
+
 export default function App() {
+  const location = useLocation()
   const navigate = useNavigate()
 
   return (
-    <div>
-      <nav className="flex gap-2 p-4">
-        <Button onClick={() => navigate("/")}>Home</Button>
-        <Button variant="outline" onClick={() => navigate("/dashboard")}>
-          Dashboard
-        </Button>
+    <div className="win7 pixelpass-desktop">
+      <nav aria-label="Primary" className="pixelpass-global-nav">
+        <div className="pixelpass-brand">
+          <span className="pixelpass-brand-icon" aria-hidden="true">
+            <PawPrint />
+          </span>
+          <span>
+            <strong>PixelPass</strong>
+            <small>meow edition ^w^</small>
+          </span>
+        </div>
+
+        <div className="pixelpass-route-buttons">
+          {navigation.map(({ Icon, label, path }) => (
+            <button
+              aria-current={location.pathname === path ? "page" : undefined}
+              className={location.pathname === path ? "default" : undefined}
+              key={path}
+              type="button"
+              onClick={() => navigate(path)}
+            >
+              <Icon aria-hidden="true" />
+              {label}
+            </button>
+          ))}
+        </div>
       </nav>
 
       <Routes>
