@@ -1,24 +1,9 @@
-from stegano import lsb
-from stegano import generators
 import json
 from PIL import Image
 import os
 import zipfile
 
 config_file = "config.json"
-
-def store_master_password(master_password):
-    """Store in memory somewhere"""
-
-def get_password(service_name, username):
-    """will need to read from pool (depending on settings)"""
-
-def add_entry(entry):
-    """add something to pool depending on settings"""
-
-def get_services():
-    """read from pool"""
-
 
 def init_vault(mode: int):
     """1: User will pass images (not paths) to seed with
@@ -31,10 +16,7 @@ def init_vault(mode: int):
     }
     with open(config_file, "w") as config:
         config.write(json.dumps(settings))
-
     return 0    
-
-
 
 def populate_vault_path_images(folders: list[str]):
     """this is like a list of file paths that we make our pool from"""
@@ -48,7 +30,6 @@ def populate_vault_path_images(folders: list[str]):
             if(os.path.isfile(file)):
                 try:
                     pic = Image.open(file, formats = ["PNG"])
-                    image_count += 1
                 except:
                     non_image_count += 1
         if non_image_count != 0:
@@ -59,7 +40,6 @@ def populate_vault_path_images(folders: list[str]):
             config.write(json.dumps(settings))
     except:
         return (-1)
-
     return 0
 
 def populate_vault_path_folder(path: str):
@@ -115,8 +95,3 @@ def populate_vault_self():
     with zipfile.ZipFIle("photos.zip") as zip_ref:
         zip_ref.extractall("images")
     return 0
-def export_vault():
-    """actually return image data to frontend"""
-
-def save_vault():
-    """flush any changes to disk if not flushed"""
