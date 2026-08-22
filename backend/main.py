@@ -1,7 +1,8 @@
 # the main python file
 import json
 import vault_manager
-from structs import Entry
+import status_manager
+from structs import Vault,Entry,Config 
 
 """"
     Function that runs the entire backend.
@@ -11,6 +12,8 @@ from structs import Entry
 """
 
 mode = -1
+mPassword = "pee"
+
 
 """
     The check config function
@@ -29,16 +32,17 @@ def check_config():
         with open("config.json") as f:
             raw = json.loads(f.read())
             parsedMode = raw["mode"]
-            if 0 < parsedMode < 5:
+            if 0 < parsedMode < 6:# 1-5 range
                 mode = parsedMode
             else:
                 mode = -1
     except:  # mode hasn't been detected
         mode = -1  # remove this and replace it with the return val above
+    startup()
 
 
 def retrieve_all_pass_ent(usrInput):
-    passwords = vault_manager.get_services()  # passwords is a list of Entry structs
+    passwords = vault_manager.get_services()  # passwords is a list of Entry structs TODO:
     payload = {
         "elecID": usrInput["elecID"],
         "action": 1,
@@ -60,7 +64,7 @@ def retrieve_all_pass_ent(usrInput):
 
 
 def reveal_password(usrInput):
-    password = vault_manager.get_password(usrInput["data"]["id"])
+    password = vault_manager.get_password(usrInput["data"]["id"]) # TODO:
     payload = {
         "elecID": usrInput["elecID"],
         "action": 2,
@@ -72,50 +76,70 @@ def reveal_password(usrInput):
 
 def create_password(usrInput):
     thisEntry = Entry(
-        usrInput["data"]["id"],
-        usrInput["data"]["serviceName"],
-        usrInput["data"]["username"],
-        usrInput["data"]["password"],
-        usrInput["data"]["isFav"],
+        id=usrInput["data"]["id"],
+        service_name=usrInput["data"]["serviceName"],
+        username=usrInput["data"]["username"],
+        password=usrInput["data"]["password"],
+        is_fav=usrInput["data"]["isFav"],
     )
-    vault_manager.add_entry(thisEntry)
+    vault_manager.add_entry(thisEntry)# TODO:
     payload = {"elecID": usrInput["elecID"], "action": 3, "success": True}
     print(json.dumps(payload))
 
 
 def remove_password(usrInput):
-    status = vault_manager.remove_entry(usrInput["data"]["id"])
+    status = vault_manager.remove_entry(usrInput["data"]["id"]) #TODO:
     if status == 0:
         payload = {"elecID": usrInput["elecID"], "action": 4, "success": True}
     else:
         payload = {"elecID": usrInput["elecID"], "action": 4, "success": False}
     print(json.dumps(payload))
 
-
-def startup():
-    global mode
-    payload = {"mode": mode}
-    print(json.dumps(payload))
-    returnVal = json.loads(input())
-    vault_manager.init_vault(
-        returnVal["mode"], returnVal["password"], returnVal["recover_mode"]
-    )
-
-
 def edit_password(usrInput):
     thisEntry = Entry(
-        usrInput["data"]["id"],
-        usrInput["data"]["serviceName"],
-        usrInput["data"]["username"],
-        usrInput["data"]["password"],
-        usrInput["data"]["isFav"],
+        id=usrInput["data"]["id"],
+        service_name=usrInput["data"]["serviceName"],
+        username=usrInput["data"]["username"],
+        password=usrInput["data"]["password"],
+        is_fav=usrInput["data"]["isFav"],
     )
-    status = edit_password(thisEntry)
+    status = vault_manager.add_entry(thisEntry) #TODO:
     if status == 0:
         payload = {"action": 5, "success": True}
     else:
         payload = {"action": 5, "success": False}
     print(json.dumps(payload))
+
+
+def startup(): #should return a config instance
+    global mode
+    global mPassword
+    payload = {"mode": mode}
+    print(json.dumps(payload))
+    returnVal = json.loads(input())
+    if mode == -1:
+        vault = vault_manager.init_vault(returnVal["mode"], returnVal["majority"], returnVal["total"])
+        mode_populate(returnVal)
+    else:
+        mPassword = returnVal["password"]
+    return get_config()
+
+def get_config():
+    with open("config.json") as f:
+        raw: Config = json.loads(f.read()) #raw is a python dictionary
+    return raw 
+
+#mode populate function is activated when there is no config file
+# it gets the mode and then parses what is from Front end
+def mode_populate(returnVal): 
+    mode = returnVal["mode"]
+    match mode:
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+        case 5:
+
 
 
 def main_server():
@@ -146,5 +170,4 @@ def main_server():
 # makes sure that it only runs when it is not called from another function, hence the __init__ thing
 if __name__ == "__main__":
     check_config()
-    startup()
     main_server()
