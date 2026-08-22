@@ -20,6 +20,47 @@ import PasswordRevealDialog from "@/components/ui/password_reveal"
 import RemovePasswordDialog from "@/components/ui/remove_password"
 import { sendBackendRequest } from "@/lib/backend-client"
 
+function useDraggable(initialPos = { x: 0, y: 0 }) {
+  const [pos, setPos] = useState(initialPos)
+  const dragging = useRef(false)
+  const offset = useRef({ x: 0, y: 0 })
+
+  const onMouseDown = useCallback(
+    (event) => {
+      dragging.current = true
+      offset.current = {
+        x: event.clientX - pos.x,
+        y: event.clientY - pos.y,
+      }
+    },
+    [pos],
+  )
+
+  useEffect(() => {
+    const onMouseMove = (event) => {
+      if (!dragging.current) return
+
+      setPos({
+        x: event.clientX - offset.current.x,
+        y: event.clientY - offset.current.y,
+      })
+    }
+    const onMouseUp = () => {
+      dragging.current = false
+    }
+
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove)
+      window.removeEventListener("mouseup", onMouseUp)
+    }
+  }, [])
+
+  return { pos, onMouseDown }
+}
+
 function PixelStarIcon(props) {
   return (
     <img
@@ -156,6 +197,7 @@ function PasswordRow({ onEdit, onRemove, onView, password }) {
 
 export default function Dashboard() {
   const navigate = useNavigate()
+  const { pos, onMouseDown } = useDraggable({ x: 0, y: 0 })
   const [activeCategory, setActiveCategory] = useState("all")
   const [error, setError] = useState("")
   const [entryToEdit, setEntryToEdit] = useState(null)
@@ -440,14 +482,27 @@ export default function Dashboard() {
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundRepeat: "no-repeat",
+        }} 
+      >
+      <section
+        className="window active glass pixelpass-main-window"
+        style={{
+          position: "relative",
+          transform: `translate(${pos.x}px, ${pos.y}px)`,
         }}
       >
-      <section className="window active glass pixelpass-main-window">
-        <div className="title-bar">
+        <div
+          className="title-bar"
+          onMouseDown={onMouseDown}
+          style={{ cursor: "grab" }}
+        >
           <div className="title-bar-text">
             PixelPass — {isDemoMode ? "Demo vault" : error ? "Vault connection" : "Unlocked vault"}
           </div>
-          <div className="title-bar-controls">
+          <div
+            className="title-bar-controls"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <button aria-label="Minimize" disabled type="button" />
             <button aria-label="Maximize" disabled type="button" />
             <button aria-label="Close" title="Close vault" type="button" onClick={lockVault} />
