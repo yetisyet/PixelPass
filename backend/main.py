@@ -129,25 +129,41 @@ def startup():  # should return a config instance
     print(json.dumps(payload))
     returnVal = json.loads(input())
     mPassword = returnVal["password"]
-    if mode == -1:
-        total = returnVal["total"]
-        majority = returnVal["majority"]
-        if total < 2 or majority < 2:
-            raise ValueError("Total and majority must both be at least 2")
-        if majority > total:
-            raise ValueError("Majority cannot be greater than total")
 
-        vault = vault_manager.init_vault(
-            returnVal["mode"], total, majority
-        )
-        mode_populate(returnVal)
-        conf = get_config()
-        status_manager.save_vault(vault, conf, mPassword)
-        success = True
+    if mode == -1:
+        new_mode = returnVal["mode"]
+
+        # Special behaviour for recovery
+        if new_mode == 5: # Recovery
+            # The total and majority are not needed, we overwrite these when checking the master password!
+            vault = vault_manager.init_vault(
+                new_mode, 0, 0 
+            )
+            mode_populate(returnVal)
+            conf = get_config()
+            success = vault_manager.check_master_password(conf, mPassword) # Sets total and majority
+
+            if len(returnVal["paths"]) < conf['storage_options']['total']:
+                conf['storage_options']['read_only'] = True
+        else:
+            total = returnVal["total"]
+            majority = returnVal["majority"]
+            if total < 2 or majority < 2:
+                raise ValueError("Total and majority must both be at least 2")
+            if majority > total:
+                raise ValueError("Majority cannot be greater than total")
+
+            vault = vault_manager.init_vault(
+                new_mode, total, majority
+            )
+            mode_populate(returnVal)
+            conf = get_config()
+            status_manager.save_vault(vault, conf, mPassword)
+            success = True
     else:
         conf = get_config()
         success = vault_manager.check_master_password(conf, mPassword)
-    print(json.dumps({"success": success, "elecID": returnVal["elecID"]}))
+    print(json.dumps({"success": success, "elecID": returnVal["elecID"], "read_only": conf['storage_options']['read_only']}))
 
     if not success:
         return startup()
@@ -195,7 +211,7 @@ def mode_populate(returnVal):
         case 4:
             vault_manager.populate_vault_self()
         case 5:
-            raise ("Not implemented")
+            vault_manager.populate_vault_path_images(returnVal["paths"])
 
 
 def main_server(config):
