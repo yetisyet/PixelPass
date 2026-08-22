@@ -44,7 +44,7 @@ def retrieve_all_pass_ent():
             ]
         },
     }
-    print(payload)
+    print(json.dumps(payload)
 
 
 def reveal_password(serviceName, userName):
@@ -54,7 +54,7 @@ def reveal_password(serviceName, userName):
         "success": True,
         "data": {"password": password},
     }
-    print(payload)
+    print(json.dumps(payload))
 
 
 def create_password(usrInput):
@@ -67,7 +67,7 @@ def create_password(usrInput):
     )
     vault_manager.add_entry(thisEntry)
     payload = {"action": 3, "success": True}
-    print(payload)
+    print(json.dumps(payload))
 
 
 def remove_password(usrInput):
@@ -78,7 +78,7 @@ def remove_password(usrInput):
         payload = {"action": 4, "success": True}
     else:
         payload = {"action": 4, "success": False}
-    print(payload)
+    print(json.dumps(payload))
 
 
 def edit_password(usrInput):
@@ -94,7 +94,7 @@ def edit_password(usrInput):
         payload = {"action": 5, "success": True}
     else:
         payload = {"action": 5, "success": False}
-    print(payload)
+    print(json.dumps(payload))
 
 
 def main_server():
