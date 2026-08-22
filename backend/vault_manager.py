@@ -10,7 +10,7 @@ from pathlib import Path
 config_file = "config.json"
 
 
-def check_master_password(config: Config, password: str):
+def check_master_password(config: Config, password: str) -> bool:
     """
     We check the master password is accurate, and then set the
     majority and totals inside the config.
@@ -26,9 +26,9 @@ def check_master_password(config: Config, password: str):
     except:
         # Something went wrong when loading the vault, we are assuming
         # that it was an incorrect master password.
-        return 1
+        return False
 
-    return 0
+    return True
 
 
 def get_password(id: int, config: Config, password: str):
