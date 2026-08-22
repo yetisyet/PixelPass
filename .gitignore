@@ -4,3 +4,6 @@ elelectron/.design-rules
 .codex/
 DESIGN.md
 PRODUCT.md
+venv/
+test/
+*__pycache__*
