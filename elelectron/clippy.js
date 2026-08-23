@@ -8,14 +8,34 @@ function generateRandomBase64() {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function oneInTenChance() {
+function randomIndex(maxExclusive) {
   const randomNumber = new Uint32Array(1);
   crypto.getRandomValues(randomNumber);
 
-  return randomNumber[0] % 10 === 0;
+  return randomNumber[0] % maxExclusive;
 }
 
-function generateBase64_24() {
+function randomCharacter(characters) {
+  return characters[randomIndex(characters.length)];
+}
+
+function shuffleCharacters(characters) {
+  for (let index = characters.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomIndex(index + 1);
+    [characters[index], characters[swapIndex]] = [
+      characters[swapIndex],
+      characters[index],
+    ];
+  }
+
+  return characters.join("");
+}
+
+function oneInTenChance() {
+  return randomIndex(10) === 0;
+}
+
+function generateSecurePassword() {
   const randomString = generateRandomBase64();
   const easterEggs = [];
 
@@ -23,7 +43,18 @@ function generateBase64_24() {
   if (oneInTenChance()) easterEggs.push("FurRy");
 
   const prefix = easterEggs.join("");
-  return `${prefix}${randomString.slice(prefix.length)}`;
+  const requiredCharacters = [
+    randomCharacter("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+    randomCharacter("abcdefghijklmnopqrstuvwxyz"),
+    randomCharacter("0123456789"),
+  ];
+  const randomCharacterCount = 24 - prefix.length - requiredCharacters.length;
+  const suffix = shuffleCharacters([
+    ...requiredCharacters,
+    ...randomString.slice(0, randomCharacterCount),
+  ]);
+
+  return `${prefix}${suffix}${randomCharacter("?@#$")}`;
 }
 
 async function copyToClipboard(text) {
@@ -135,7 +166,7 @@ async function initializeClippy() {
   }
 
   agent._el.addEventListener("click", async () => {
-    const randomString = generateBase64_24();
+    const randomString = generateSecurePassword();
 
     try {
       await copyToClipboard(randomString);
@@ -150,3 +181,4 @@ async function initializeClippy() {
 initializeClippy().catch((error) => {
   console.error("Could not initialize Clippy:", error);
 });
+
