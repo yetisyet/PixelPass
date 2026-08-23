@@ -214,7 +214,7 @@ export default function Dashboard() {
 
       setPasswords(normalizeEntries(response.data.entries))
       setIsDemoMode(false)
-      setStatusMessage("vault unlocked nyah ^w^")
+      setStatusMessage("Vault has been locked.")
     } catch (loadError) {
       if (requestId !== listRequestId.current) return
       setPasswords([])
@@ -650,11 +650,11 @@ export default function Dashboard() {
                 ) : (
                   <div className="pixelpass-empty-state">
                     <PawPrint aria-hidden="true" />
-                    <h2>no matching paw prints T~T</h2>
+                    <h2>No Passwords Found</h2>
                     <p>
                       {activeCategory === "secure-notes"
                         ? "secure notes are still curled up for now >w<"
-                        : "try another search or pick a different folder nyah"}
+                        : "Try another search or pick a different folder."}
                     </p>
                   </div>
                 )}

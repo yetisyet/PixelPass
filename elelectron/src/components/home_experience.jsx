@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowLeft,
   Check,
@@ -54,6 +54,47 @@ const ceremonyStages = {
     "Splitting it into recovery shares",
     "Hiding each share inside an image",
   ],
+}
+
+function useDraggable(initialPos = { x: 0, y: 0 }) {
+  const [pos, setPos] = useState(initialPos)
+  const dragging = useRef(false)
+  const offset = useRef({ x: 0, y: 0 })
+
+  const onMouseDown = useCallback(
+    (event) => {
+      dragging.current = true
+      offset.current = {
+        x: event.clientX - pos.x,
+        y: event.clientY - pos.y,
+      }
+    },
+    [pos],
+  )
+
+  useEffect(() => {
+    const onMouseMove = (event) => {
+      if (!dragging.current) return
+
+      setPos({
+        x: event.clientX - offset.current.x,
+        y: event.clientY - offset.current.y,
+      })
+    }
+    const onMouseUp = () => {
+      dragging.current = false
+    }
+
+    window.addEventListener("mousemove", onMouseMove)
+    window.addEventListener("mouseup", onMouseUp)
+
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove)
+      window.removeEventListener("mouseup", onMouseUp)
+    }
+  }, [])
+
+  return { pos, onMouseDown }
 }
 
 function pause(milliseconds) {
@@ -122,6 +163,7 @@ function FlowProgress({ currentStep }) {
 export default function HomeExperience() {
   const navigate = useNavigate()
   const recoveryInputRef = useRef(null)
+  const { pos, onMouseDown } = useDraggable({ x: 0, y: 0 })
   const [backendMode, setBackendMode] = useState(null)
   const [ceremonyKind, setCeremonyKind] = useState("setup")
   const [ceremonyStage, setCeremonyStage] = useState(0)
@@ -791,10 +833,23 @@ export default function HomeExperience() {
       className="pixelpass-page pixelpass-home-page"
       style={{ backgroundImage: `url(${background})`, backgroundPosition: "center", backgroundSize: "cover" }}
     >
-      <section className="window active glass pixelpass-flow-window">
-        <div className="title-bar">
+      <section
+        className="window active glass pixelpass-flow-window"
+        style={{
+          position: "relative",
+          transform: `translate(${pos.x}px, ${pos.y}px)`,
+        }}
+      >
+        <div
+          className="title-bar"
+          onMouseDown={onMouseDown}
+          style={{ cursor: "grab" }}
+        >
           <div className="title-bar-text">PixelPass — {screen === "recovery" ? "Image recovery" : screen === "setup" ? "New image vault" : "Welcome"}</div>
-          <div className="title-bar-controls">
+          <div
+            className="title-bar-controls"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
             <button aria-label="Minimize" disabled type="button" />
             <button aria-label="Maximize" disabled type="button" />
             <button aria-label="Close" disabled type="button" />

@@ -11,7 +11,7 @@ const seededPasscodes = [
     id: "totp-github",
     issuer: "GitHub",
     accountName: "demo@pixelpass.app",
-    tone: "violet",
+    tone: "blue",
   },
   {
     id: "totp-discord",
