@@ -99,7 +99,24 @@ function pause(milliseconds) {
 }
 
 function basename(path) {
-  return path?.split(/[\\/]/).pop() || "Selected image"
+  return typeof path === "string"
+    ? path.split(/[\\/]/).pop() || "Selected image"
+    : "Selected image"
+}
+
+function normalizeImageSelection(selection, index) {
+  const selectedPath = typeof selection === "string" ? selection : selection?.path
+  if (typeof selectedPath !== "string" || selectedPath.length === 0) return null
+
+  return {
+    id: `${selectedPath}-${index}`,
+    name:
+      typeof selection?.name === "string" && selection.name.length > 0
+        ? selection.name
+        : basename(selectedPath),
+    path: selectedPath,
+    preview: typeof selection?.preview === "string" ? selection.preview : null,
+  }
 }
 
 function PreviewStrip({
@@ -226,10 +243,15 @@ export default function HomeExperience() {
   }
 
   async function chooseSetupFiles() {
-    const paths = await window.pixelPassBackend?.selectImagePaths?.()
-    if (!Array.isArray(paths) || paths.length === 0) return
+    const selections = await window.pixelPassBackend?.selectImagePaths?.()
+    if (!Array.isArray(selections) || selections.length === 0) return
 
-    setSelectedPaths(paths)
+    const files = selections
+      .map(normalizeImageSelection)
+      .filter(Boolean)
+    if (files.length === 0) return
+
+    setSelectedPaths(files)
     setSetupSource("files")
     setError("")
   }
@@ -304,9 +326,7 @@ export default function HomeExperience() {
       return {
         ...common,
         mode: 3,
-        paths: selectedPaths.map((file) =>
-          typeof file === "string" ? file : file.path,
-        ),
+        paths: selectedPaths.map((file) => file.path),
       }
     }
     return {
@@ -376,17 +396,18 @@ export default function HomeExperience() {
 
   async function chooseRecoveryFiles() {
     try {
-      const paths = await window.pixelPassBackend?.selectImagePaths?.()
-      if (!Array.isArray(paths)) {
+      const selections = await window.pixelPassBackend?.selectImagePaths?.()
+      if (!Array.isArray(selections)) {
         throw new Error("The recovery image picker is not available.")
       }
-      if (paths.length === 0) return
+      if (selections.length === 0) return
 
-      const files = paths.map((path, index) => ({
-        id: `${path}-${index}`,
-        name: basename(path),
-        path,
-      }))
+      const files = selections
+        .map(normalizeImageSelection)
+        .filter(Boolean)
+      if (files.length === 0) {
+        throw new Error("The image picker returned no usable PNG paths.")
+      }
 
       setRecoveryFiles(files)
       setError("")
@@ -443,16 +464,7 @@ export default function HomeExperience() {
       }))
     }
     if (setupSource === "files") {
-      return selectedPaths.map((file, index) => {
-        const path = typeof file === "string" ? file : file.path
-
-        return {
-          id: `${path}-${index}`,
-          name: typeof file === "string" ? basename(path) : file.name,
-          path,
-          preview: typeof file === "string" ? null : file.preview,
-        }
-      })
+      return selectedPaths
     }
     return []
   }, [pastedImage, selectedPaths, setupSource])
