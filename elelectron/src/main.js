@@ -12,7 +12,11 @@ const BACKEND_STARTUP_TIMEOUT_MS = 300_000;
 const pendingBackendRequests = new Map();
 const pendingStartupRequests = new Set();
 let backendProcess = null;
+let backendRestartPromise = null;
 let backendStartupState = null;
+let backendReady = false;
+let isQuitting = false;
+let startupSubmissionInFlight = false;
 
 const getBackendRequestTimeout = (request) => {
   if ([3, 4, 5].includes(request.action)) return BACKEND_WRITE_TIMEOUT_MS;
@@ -49,6 +53,7 @@ const rejectBackendRequest = (elecID, error) => {
 
   clearTimeout(pendingRequest.timeout);
   pendingBackendRequests.delete(elecID);
+  if (pendingRequest.isStartupSubmission) startupSubmissionInFlight = false;
   pendingRequest.reject(error);
 };
 
@@ -84,6 +89,8 @@ const startBackend = () => {
   if (backendProcess) return;
 
   backendStartupState = null;
+  backendReady = false;
+  startupSubmissionInFlight = false;
   const backendPath = getBackendPath();
   const pythonCommand = getPythonCommand();
   const child = spawn(pythonCommand, ['-u', backendPath], {
@@ -132,6 +139,10 @@ const startBackend = () => {
 
     clearTimeout(pendingRequest.timeout);
     pendingBackendRequests.delete(response.elecID);
+    if (pendingRequest.isStartupSubmission) {
+      startupSubmissionInFlight = false;
+      if (response.success === true) backendReady = true;
+    }
     pendingRequest.resolve(response);
   });
 
@@ -149,6 +160,8 @@ const startBackend = () => {
   child.on('close', (code) => {
     outputLines.close();
     if (backendProcess === child) backendProcess = null;
+    backendReady = false;
+    startupSubmissionInFlight = false;
     const error = new Error(`Python backend stopped unexpectedly with exit code ${code}.`);
     rejectBackendStartup(error);
     rejectAllBackendRequests(error);
@@ -158,8 +171,40 @@ const startBackend = () => {
 const stopBackend = () => {
   const child = backendProcess;
   backendProcess = null;
+  backendStartupState = null;
+  backendReady = false;
+  startupSubmissionInFlight = false;
 
   if (child && !child.killed) child.kill();
+};
+
+const restartBackend = () => {
+  if (backendRestartPromise) return backendRestartPromise;
+
+  backendRestartPromise = new Promise((resolve, reject) => {
+    const child = backendProcess;
+    const launchBackend = () => {
+      if (isQuitting) {
+        reject(new Error('PixelPass is shutting down.'));
+        return;
+      }
+
+      startBackend();
+      waitForBackendStartup().then(resolve, reject);
+    };
+
+    if (!child) {
+      launchBackend();
+      return;
+    }
+
+    child.once('close', launchBackend);
+    stopBackend();
+  }).finally(() => {
+    backendRestartPromise = null;
+  });
+
+  return backendRestartPromise;
 };
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -173,6 +218,7 @@ ipcMain.handle('clipboard:write', (_event, text) => {
 });
 
 ipcMain.handle('python:startup', () => waitForBackendStartup());
+ipcMain.handle('python:lock', () => restartBackend());
 
 ipcMain.handle('dialog:select-directory', async () => {
   const selection = await dialog.showOpenDialog({
@@ -221,10 +267,23 @@ ipcMain.handle('python:request', (_event, request) => {
     throw new Error('Python backend is not running.');
   }
 
+  const isStartupSubmission = request.action === undefined || request.action === null;
+  if (isStartupSubmission && backendReady) {
+    throw new Error('The Python backend is already unlocked.');
+  }
+  if (isStartupSubmission && startupSubmissionInFlight) {
+    throw new Error('A Python backend unlock request is already in progress.');
+  }
+  if (!isStartupSubmission && !backendReady) {
+    throw new Error('The Python backend must be unlocked before handling vault actions.');
+  }
+
   const elecID = randomUUID();
   const protocolRequest = { ...request, elecID };
   const protocolLine = `${JSON.stringify(protocolRequest)}\n`;
   const timeoutMs = getBackendRequestTimeout(request);
+
+  if (isStartupSubmission) startupSubmissionInFlight = true;
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -236,7 +295,12 @@ ipcMain.handle('python:request', (_event, request) => {
       );
     }, timeoutMs);
 
-    pendingBackendRequests.set(elecID, { reject, resolve, timeout });
+    pendingBackendRequests.set(elecID, {
+      isStartupSubmission,
+      reject,
+      resolve,
+      timeout,
+    });
 
     child.stdin.write(protocolLine, 'utf8', (error) => {
       if (error) rejectBackendRequest(elecID, error);
@@ -281,6 +345,7 @@ app.whenReady().then(() => {
 });
 
 app.on('before-quit', () => {
+  isQuitting = true;
   stopBackend();
 });
 

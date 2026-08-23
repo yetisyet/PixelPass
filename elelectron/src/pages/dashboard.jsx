@@ -164,6 +164,7 @@ export default function Dashboard() {
   const [isAddPasscodeOpen, setIsAddPasscodeOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLocking, setIsLocking] = useState(false)
   const [isRevealOpen, setIsRevealOpen] = useState(false)
   const [isRemoveOpen, setIsRemoveOpen] = useState(false)
   const [isRevealing, setIsRevealing] = useState(false)
@@ -397,13 +398,29 @@ export default function Dashboard() {
     setStatusMessage("removed password from ur vault T~T")
   }
 
-  function lockVault() {
+  async function lockVault() {
+    if (isLocking) return
+
     listRequestId.current += 1
     revealRequestId.current += 1
     setPasswords([])
     setRevealedPassword("")
     setSelectedEntry(null)
-    navigate("/")
+    setIsLocking(true)
+    setStatusMessage("locking ur vault…")
+
+    try {
+      const startup = await window.pixelPassBackend?.lock?.()
+      if (!startup || !Number.isInteger(startup.mode)) {
+        throw new Error("The backend did not restart in a locked state.")
+      }
+      navigate("/")
+    } catch (lockError) {
+      setError(lockError.message)
+      setStatusMessage("could not lock the vault T~T")
+    } finally {
+      setIsLocking(false)
+    }
   }
 
   function selectCategory(id) {
@@ -450,7 +467,7 @@ export default function Dashboard() {
           >
             <button aria-label="Minimize" disabled type="button" />
             <button aria-label="Maximize" disabled type="button" />
-            <button aria-label="Close" title="Close vault" type="button" onClick={lockVault} />
+            <button aria-label="Close" disabled={isLocking} title="Close vault" type="button" onClick={lockVault} />
           </div>
         </div>
 

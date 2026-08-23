@@ -2,6 +2,7 @@
 # external imports
 import json
 import base64
+import sys
 from io import BytesIO
 from PIL import Image
 
@@ -195,6 +196,19 @@ def get_config():
     return raw
 
 
+def send_request_error(usr_input, message):
+    """Return a protocol error without terminating the long-running backend."""
+    payload = {"success": False, "error": message}
+
+    if isinstance(usr_input, dict):
+        if "elecID" in usr_input:
+            payload["elecID"] = usr_input["elecID"]
+        if "action" in usr_input:
+            payload["action"] = usr_input["action"]
+
+    print(json.dumps(payload), flush=True)
+
+
 # mode populate function is activated when there is no config file
 # it gets the mode and then parses what is from Front end
 def mode_populate(returnVal):
@@ -232,22 +246,51 @@ def mode_populate(returnVal):
 
 
 def main_server(config):
-    while 1:  # add something
-        usrInput = json.loads(input())
-        action = usrInput["action"]
-        match action:
-            case 1:
-                retrieve_all_pass_ent(usrInput, config)
-            case 2:
-                reveal_password(usrInput, config)
-            case 3:
-                create_password(usrInput, config)
-            case 4:
-                remove_password(usrInput, config)
-            case 5:
-                edit_password(usrInput, config)
-            case _:
-                print("ERR, unknown operation")  # REALLY shouldn't happen!!
+    while True:
+        try:
+            raw_input = input()
+        except EOFError:
+            return
+
+        try:
+            usrInput = json.loads(raw_input)
+        except json.JSONDecodeError as error:
+            print(f"Invalid JSON request: {error}", file=sys.stderr, flush=True)
+            continue
+
+        if not isinstance(usrInput, dict):
+            print("Backend request must be a JSON object.", file=sys.stderr, flush=True)
+            continue
+
+        action = usrInput.get("action")
+        if action is None:
+            send_request_error(
+                usrInput,
+                'Backend request is missing the required "action" field.',
+            )
+            continue
+
+        try:
+            match action:
+                case 1:
+                    retrieve_all_pass_ent(usrInput, config)
+                case 2:
+                    reveal_password(usrInput, config)
+                case 3:
+                    create_password(usrInput, config)
+                case 4:
+                    remove_password(usrInput, config)
+                case 5:
+                    edit_password(usrInput, config)
+                case _:
+                    send_request_error(usrInput, f"Unknown backend action: {action}")
+        except Exception as error:
+            print(
+                f"Backend action {action} failed: {error}",
+                file=sys.stderr,
+                flush=True,
+            )
+            send_request_error(usrInput, f"Backend action {action} failed: {error}")
 
 
 # makes sure that it only runs when it is not called from another function, hence the __init__ thing
