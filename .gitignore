@@ -10,3 +10,4 @@ test/
 *.png
 backend/images/*
 *config.json
+**/.DS_Store

@@ -1,32 +1,8 @@
 import { sendBackendRequest } from "@/lib/backend-client"
+import { generateTotp, normalizeBase32 } from "@/lib/totp"
 
-// Recovery and TOTP are frontend-first prototypes until their backend actions
-// land. Keeping this switch here prevents fixture logic leaking into screens.
-export const USE_FEATURE_STUBS = true
-
-const PASSCODE_PERIOD_SECONDS = 30
-
-const seededPasscodes = [
-  {
-    id: "totp-github",
-    issuer: "GitHub",
-    accountName: "demo@pixelpass.app",
-    tone: "blue",
-  },
-  {
-    id: "totp-discord",
-    issuer: "Discord",
-    accountName: "pixel-paws",
-    tone: "blue",
-  },
-]
-const sessionPasscodes = new Map(
-  seededPasscodes.map((passcode) => [passcode.id, passcode]),
-)
-
-function wait(milliseconds) {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds))
-}
+const sessionPasscodes = new Map()
+const passcodeTones = ["gold", "blue", "green"]
 
 function imageUrlToPngPayload(imageUrl) {
   return new Promise((resolve, reject) => {
@@ -48,106 +24,50 @@ function imageUrlToPngPayload(imageUrl) {
   })
 }
 
-function displayName(file, index) {
-  return file?.name || file?.path?.split(/[\\/]/).pop() || `vault-image-${index + 1}.png`
-}
-
-function currentPasscode(record, now = Date.now()) {
-  const periodMilliseconds = PASSCODE_PERIOD_SECONDS * 1000
-  const period = Math.floor(now / periodMilliseconds)
-  let hash = 2166136261
-
-  for (const character of `${record.id}:${period}`) {
-    hash ^= character.charCodeAt(0)
-    hash = Math.imul(hash, 16777619)
-  }
+async function currentPasscode(record, now = Date.now()) {
+  const { secret, ...metadata } = record
+  if (!secret) throw new Error("This authenticator entry is missing its secret.")
 
   return {
-    ...record,
-    code: String(Math.abs(hash) % 1_000_000).padStart(6, "0"),
-    expiresAt: (period + 1) * periodMilliseconds,
-    isStub: true,
-    periodSeconds: PASSCODE_PERIOD_SECONDS,
+    ...metadata,
+    ...(await generateTotp(secret, { now })),
   }
 }
 
-export function createDemoRecoveryFiles() {
-  return [
-    { id: "demo-cat-window", name: "cat-at-the-window.png", isDemo: true },
-    { id: "demo-cat-garden", name: "garden-cat.png", isDemo: true },
-    { id: "demo-cat-sunbeam", name: "sunbeam-nap.png", isDemo: true },
-    { id: "demo-cat-socks", name: "socks-the-cat.png", isDemo: true },
-    { id: "demo-cat-camera", name: "camera-roll-cat.png", isDemo: true },
-  ]
-}
-
-export async function inspectRecoveryImages(files) {
-  /**
-   * BACKEND_HANDOFF(recovery.inspect)
-   * Send the selected image payloads or paths. Return share validity,
-   * threshold, total share count, and a vault fingerprint. Do not decrypt or
-   * expose vault contents during inspection.
-   */
-  await wait(720)
-
-  const normalizedFiles = Array.from(files ?? []).map((file, index) => ({
-    id: file.id || `${displayName(file, index)}-${index}`,
-    name: displayName(file, index),
-    source: file,
-  }))
-
-  if (normalizedFiles.length === 0) {
-    throw new Error("Choose at least one image to inspect.")
-  }
-
-  const hasMixedVaults = normalizedFiles.some(({ name }) =>
-    name.toLowerCase().includes("mixed"),
+export async function recoverVault({ paths, masterKey }) {
+  const normalizedPaths = Array.from(new Set(paths ?? [])).filter(
+    (path) => typeof path === "string" && path.length > 0,
   )
-  const invalidCount = normalizedFiles.filter(({ name }) =>
-    /ordinary|invalid|empty/i.test(name),
-  ).length
-  const validShares = Math.max(0, normalizedFiles.length - invalidCount)
-  const requiredShares = 3
 
-  return {
-    files: normalizedFiles,
-    hasMixedVaults,
-    invalidCount,
-    isStub: true,
-    requiredShares,
-    totalShares: Math.max(5, normalizedFiles.length),
-    validShares,
-    vaultFingerprint: hasMixedVaults ? null : "PP-7A2C",
+  if (normalizedPaths.length < 2) {
+    throw new Error("Choose at least two PixelPass recovery images.")
   }
-}
-
-export async function recoverVault({ inspection, masterKey }) {
-  /**
-   * BACKEND_HANDOFF(recovery.unlock)
-   * Send the selected image payloads plus the master key. The backend should
-   * combine a threshold of Shamir shares, decrypt the vault, and return only
-   * success metadata or a typed recovery error.
-   */
-  await wait(1650)
-
-  if (!inspection) throw new Error("Inspect recovery images first.")
-  if (inspection.hasMixedVaults) {
-    throw new Error("These images appear to belong to different PixelPass vaults.")
+  if (normalizedPaths.some((path) => !path.toLowerCase().endsWith(".png"))) {
+    throw new Error("PixelPass recovery images must be PNG files.")
   }
-  if (inspection.validShares < inspection.requiredShares) {
+  if (!masterKey) {
+    throw new Error("Enter the master key used when this vault was created.")
+  }
+
+  const response = await sendBackendRequest({
+    mode: 5,
+    password: masterKey,
+    paths: normalizedPaths,
+  })
+
+  if (!response.success) {
     throw new Error(
-      `Only ${inspection.validShares} valid shares were found. This vault needs ${inspection.requiredShares}.`,
+      response.error ||
+        "PixelPass could not recover this vault. Check the master key and make sure the selected images are matching recovery shares.",
     )
   }
-  if (!masterKey || masterKey.length < 8 || /wrong/i.test(masterKey)) {
-    throw new Error("That master key could not decrypt the recovered vault.")
+  if (typeof response.read_only !== "boolean") {
+    throw new Error('Backend recovery response must include a boolean "read_only" field.')
   }
 
   return {
-    entryCount: 4,
-    isStub: true,
-    sharesUsed: inspection.requiredShares,
-    vaultFingerprint: inspection.vaultFingerprint,
+    readOnly: response.read_only,
+    sharesProvided: normalizedPaths.length,
   }
 }
 
@@ -179,54 +99,37 @@ export async function initializeGuidedVault({ backendRequest }) {
 }
 
 export async function listPasscodes() {
-  /**
-   * BACKEND_HANDOFF(passcodes.list)
-   * Return passcode metadata and the current code window. The future vault
-   * stores the TOTP secret; it must never persist the rolling six-digit code.
-  */
-  await wait(360)
-  return Array.from(sessionPasscodes.values())
-    .map((record) => currentPasscode(record))
+  return Promise.all(
+    Array.from(sessionPasscodes.values()).map((record) => currentPasscode(record)),
+  )
 }
 
 export async function requestCurrentPasscode(record) {
-  /**
-   * BACKEND_HANDOFF(passcodes.current)
-   * Request a single code by entry ID. Expected fields: code, expiresAt, and
-   * periodSeconds. The secret remains inside the encrypted vault.
-   */
-  await wait(90)
-  return currentPasscode(record)
+  const storedRecord = sessionPasscodes.get(record.id)
+  if (!storedRecord) throw new Error("This authenticator entry is no longer available.")
+  return currentPasscode(storedRecord)
 }
 
 export async function createPasscode({ accountName, issuer, secret }) {
-  /**
-   * BACKEND_HANDOFF(passcodes.create)
-   * Send issuer, accountName, and the authenticator secret over the existing
-   * IPC boundary. The backend validates and encrypts the secret in the vault.
-   */
-  await wait(520)
-
-  if (!issuer.trim() || !accountName.trim() || secret.trim().length < 8) {
-    throw new Error("Enter an issuer, account, and a valid authenticator secret.")
+  const normalizedIssuer = issuer.trim()
+  const normalizedAccountName = accountName.trim()
+  if (!normalizedIssuer || !normalizedAccountName) {
+    throw new Error("Enter both the issuer and account name.")
   }
+  const normalizedSecret = normalizeBase32(secret)
 
   const record = {
-    accountName: accountName.trim(),
-    id: `totp-${Date.now()}`,
-    issuer: issuer.trim(),
-    tone: "green",
+    accountName: normalizedAccountName,
+    id: globalThis.crypto?.randomUUID?.() ?? `totp-${Date.now()}`,
+    issuer: normalizedIssuer,
+    secret: normalizedSecret,
+    tone: passcodeTones[sessionPasscodes.size % passcodeTones.length],
   }
+  const generatedRecord = await currentPasscode(record)
   sessionPasscodes.set(record.id, record)
-  return currentPasscode(record)
+  return generatedRecord
 }
 
 export async function removePasscode(id) {
-  /**
-   * BACKEND_HANDOFF(passcodes.remove)
-   * Remove the passcode entry by ID and persist the updated encrypted vault.
-  */
-  await wait(240)
-  sessionPasscodes.delete(id)
-  return { id, isStub: true, success: true }
+  return { id, success: sessionPasscodes.delete(id) }
 }

@@ -162,30 +162,6 @@ input {
     linear-gradient(145deg, #2c8db7 0%, #65c3cd 42%, #1b5e88 100%);
 }
 
-.pixelpass-global-nav {
-  min-height: 54px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 7px 16px;
-  border-bottom: 1px solid rgba(20, 63, 85, 0.72);
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.72),
-    0 2px 8px rgba(10, 42, 58, 0.3);
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.68), rgba(205, 232, 243, 0.68) 46%, rgba(118, 183, 211, 0.62) 47%, rgba(208, 236, 245, 0.62));
-  backdrop-filter: blur(10px);
-}
-
-.pixelpass-brand,
-.pixelpass-brand > span:last-child,
-.pixelpass-route-buttons,
-.pixelpass-route-buttons button,
-.pixelpass-command-bar,
-.pixelpass-command-group,
-.pixelpass-command-bar button,
 .pixelpass-sidebar-heading,
 .pixelpass-service-cell,
 .pixelpass-action-cell button,
@@ -253,8 +229,6 @@ input {
   gap: 6px;
 }
 
-.pixelpass-route-buttons svg,
-.pixelpass-command-bar button svg,
 .pixelpass-action-cell button svg,
 .pixelpass-home-actions button svg {
   width: 15px;
@@ -262,7 +236,7 @@ input {
 }
 
 .pixelpass-page {
-  min-height: calc(100vh - 54px);
+  min-height: 100vh;
   box-sizing: border-box;
   display: grid;
   place-items: center;
@@ -271,7 +245,7 @@ input {
 
 .win7 .pixelpass-main-window {
   width: min(1180px, 100%);
-  height: min(720px, calc(100vh - 90px));
+  height: min(720px, calc(100vh - 36px));
   min-height: 490px;
   display: flex;
   flex-direction: column;
@@ -295,28 +269,6 @@ input {
   overflow: hidden;
   border: 1px solid #7192a8;
   background: #f5f8fa;
-}
-
-.pixelpass-command-bar {
-  min-height: 42px;
-  box-sizing: border-box;
-  flex: 0 0 auto;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 6px 8px;
-  border-bottom: 1px solid #aebdcc;
-  box-shadow: inset 0 1px #fff;
-  background: linear-gradient(#fff, #edf3f8 54%, #dce8f1);
-}
-
-.pixelpass-command-group {
-  gap: 6px;
-}
-
-.win7 .pixelpass-command-bar button {
-  min-height: 28px;
-  gap: 6px;
-  justify-content: center;
 }
 
 .pixelpass-explorer {
@@ -483,6 +435,28 @@ input {
   min-width: 0;
 }
 
+.pixelpass-content-actions {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.win7 .pixelpass-content-actions > button {
+  min-height: 30px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.pixelpass-content-actions > button svg {
+  width: 15px;
+  height: 15px;
+}
+
 .pixelpass-search {
   width: min(340px, 48%);
   min-width: 190px;
@@ -558,6 +532,42 @@ input {
 .win7 .pixelpass-offline-notice button {
   min-width: 98px;
   flex: 0 0 auto;
+}
+
+.pixelpass-read-only-notice {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  color: #594b28;
+  border-bottom: 1px solid #cbbd8f;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fffdf5, #f3ecd2);
+}
+
+.pixelpass-read-only-notice > svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: #806d34;
+}
+
+.pixelpass-read-only-notice > div {
+  min-width: 0;
+}
+
+.pixelpass-read-only-notice strong,
+.pixelpass-read-only-notice span {
+  display: block;
+}
+
+.pixelpass-read-only-notice span {
+  margin-top: 1px;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .pixelpass-list-frame {
@@ -814,10 +824,10 @@ input {
   flex: 0 0 40px;
   place-items: center;
   color: #fff;
-  border: 1px solid #67506e;
+  border: 1px solid #39718a;
   border-radius: 6px;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.72), 0 1px 2px rgba(51, 36, 57, 0.36);
-  background: linear-gradient(#ca9ed5, #805c91);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.72), 0 1px 2px rgba(28, 70, 91, 0.36);
+  background: linear-gradient(#a9dff0, #367fa0);
 }
 
 .pixelpass-dialog-icon svg {
@@ -1036,10 +1046,6 @@ input {
 }
 
 @media (max-width: 720px) {
-  .pixelpass-global-nav {
-    padding-inline: 10px;
-  }
-
   .pixelpass-page {
     place-items: stretch;
     padding: 8px;
@@ -1047,7 +1053,7 @@ input {
 
   .win7 .pixelpass-main-window {
     width: 100%;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 16px);
     min-height: 500px;
   }
 
@@ -1075,6 +1081,10 @@ input {
     align-items: stretch;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .pixelpass-content-actions {
+    width: 100%;
   }
 
   .pixelpass-search {
@@ -1106,35 +1116,11 @@ input {
 
 @media (max-width: 520px) {
   .pixelpass-page {
-    min-height: calc(100vh - 58px);
+    min-height: 100vh;
   }
 
   .win7 .pixelpass-search input {
     height: 44px;
-  }
-
-  .pixelpass-brand small,
-  .pixelpass-command-group button:first-child svg,
-  .pixelpass-command-group button:nth-child(2) svg {
-    display: none;
-  }
-
-  .pixelpass-brand-icon {
-    width: 30px;
-    height: 30px;
-    flex-basis: 30px;
-  }
-
-  .win7 .pixelpass-route-buttons button {
-    min-width: 38px;
-    min-height: 44px;
-    padding-inline: 9px;
-    font-size: 0;
-  }
-
-  .pixelpass-route-buttons button svg {
-    width: 16px;
-    height: 16px;
   }
 
   .pixelpass-explorer {
@@ -1170,15 +1156,6 @@ input {
   .pixelpass-sidebar-link svg {
     width: 18px;
     height: 18px;
-  }
-
-  .pixelpass-command-bar {
-    align-items: stretch;
-  }
-
-  .win7 .pixelpass-command-bar button {
-    min-width: 0;
-    padding-inline: 8px;
   }
 
   .pixelpass-content-header h1 {
@@ -1285,7 +1262,7 @@ input {
 
 .pixelpass-flow-window {
   width: min(960px, 100%);
-  height: min(690px, calc(100vh - 92px));
+  height: min(690px, calc(100vh - 36px));
   min-height: 470px;
   display: flex;
   flex-direction: column;
@@ -1393,7 +1370,7 @@ input {
 .pixelpass-proof-line svg {
   width: 21px;
   height: 21px;
-  color: #78518c;
+  color: #247ca3;
 }
 
 .pixelpass-choice-actions {
@@ -1497,12 +1474,12 @@ input {
   place-items: center;
   margin-top: 28px;
   color: #fff;
-  border: 1px solid #674b74;
+  border: 1px solid #3d7892;
   border-radius: 50%;
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.7),
-    0 8px 18px rgba(73, 46, 83, 0.27);
-  background: linear-gradient(#c79ad4, #7c578c 53%, #9567a6);
+    0 8px 18px rgba(32, 91, 118, 0.27);
+  background: linear-gradient(#9bd7e9, #3f91b4 53%, #63abc5);
 }
 
 .pixelpass-unlock-form {
@@ -1556,8 +1533,7 @@ input {
 .win7 .pixelpass-step-actions button,
 .win7 .pixelpass-picker-actions button,
 .win7 .pixelpass-recovery-picker > button,
-.win7 .pixelpass-recovery-result > button,
-.pixelpass-command-bar button {
+.win7 .pixelpass-recovery-result > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1613,21 +1589,6 @@ input {
 .pixelpass-icon-button svg {
   width: 16px;
   height: 16px;
-}
-
-.pixelpass-demo-badge {
-  flex: 0 0 auto;
-  margin-top: 3px;
-  padding: 4px 8px;
-  color: #5d3f68;
-  border: 1px solid #b9a0c0;
-  border-radius: 9px;
-  box-shadow: inset 0 1px #fff;
-  background: linear-gradient(#fff, #ede3f1);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .pixelpass-flow-progress {
@@ -1898,7 +1859,7 @@ input {
 .pixelpass-paste-zone svg {
   width: 32px;
   height: 32px;
-  color: #7e598f;
+  color: #287ca0;
 }
 
 .pixelpass-path-readout {
@@ -1977,7 +1938,7 @@ input {
 
 .pixelpass-threshold-control > strong {
   order: 3;
-  color: #684b74;
+  color: #236f92;
   font-size: 16px;
   text-align: right;
 }
@@ -2027,7 +1988,7 @@ input {
   width: 44px;
   height: 44px;
   margin-bottom: 13px;
-  color: #805b91;
+  color: #287ca0;
 }
 
 .pixelpass-vault-summary strong,
@@ -2084,8 +2045,7 @@ input {
   margin-bottom: 5px;
 }
 
-.pixelpass-recovery-empty,
-.pixelpass-result-placeholder {
+.pixelpass-recovery-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2101,12 +2061,11 @@ input {
   background: #f5fafc;
 }
 
-.pixelpass-recovery-empty svg,
-.pixelpass-result-placeholder svg {
+.pixelpass-recovery-empty svg {
   width: 34px;
   height: 34px;
   margin-bottom: 8px;
-  color: #835d94;
+  color: #287ca0;
 }
 
 .pixelpass-recovery-result {
@@ -2114,101 +2073,63 @@ input {
   flex-direction: column;
 }
 
-.pixelpass-result-placeholder {
-  min-height: 100%;
-  padding: 24px;
-}
-
-.pixelpass-result-placeholder strong,
-.pixelpass-result-placeholder span {
-  display: block;
-}
-
-.pixelpass-result-placeholder span {
-  max-width: 30ch;
-  margin-top: 5px;
-  font-size: 10px;
-  line-height: 1.4;
-}
-
-.pixelpass-share-verdict {
+.pixelpass-recovery-readiness {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 9px;
+  margin-bottom: 20px;
   padding: 10px;
   border: 1px solid #c7a1a1;
   background: #fff0f0;
 }
 
-.pixelpass-share-verdict.is-ready {
+.pixelpass-recovery-readiness.is-ready {
   color: #315f43;
   border-color: #96bca3;
   background: #edf8f0;
 }
 
-.pixelpass-share-verdict > svg {
+.pixelpass-recovery-readiness > svg {
   width: 25px;
   height: 25px;
   flex: 0 0 25px;
 }
 
-.pixelpass-share-verdict strong,
-.pixelpass-share-verdict span {
+.pixelpass-recovery-readiness > div {
+  min-width: 0;
+}
+
+.pixelpass-recovery-readiness strong,
+.pixelpass-recovery-readiness span {
   display: block;
 }
 
-.pixelpass-share-verdict span {
-  margin-top: 2px;
-  font-size: 9px;
-}
-
-.pixelpass-share-meter {
-  display: flex;
-  gap: 5px;
-  margin: 14px 0;
-}
-
-.pixelpass-share-meter span {
-  height: 8px;
-  flex: 1;
-  border: 1px solid #c1ccd2;
-  background: #e3e9ec;
-}
-
-.pixelpass-share-meter span.is-found {
-  border-color: #5a8e73;
-  background: linear-gradient(#9bcbaa, #52936d);
-}
-
-.pixelpass-recovery-facts {
-  margin: 0 0 17px;
-}
-
-.pixelpass-recovery-facts > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid #dce5e9;
-}
-
-.pixelpass-recovery-facts dt {
-  color: #627783;
-}
-
-.pixelpass-recovery-facts dd {
-  margin: 0;
-  color: #284f65;
-  font-weight: 600;
+.pixelpass-recovery-readiness span {
+  max-width: 38ch;
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 .pixelpass-recovery-result > input {
-  margin-bottom: 12px;
+  margin-bottom: 5px;
+}
+
+.pixelpass-recovery-result > small {
+  color: #607582;
+  line-height: 1.35;
 }
 
 .pixelpass-recovery-result > button {
-  margin-top: auto;
+  margin-top: 18px;
   align-self: flex-start;
+}
+
+.pixelpass-recovery-count {
+  margin: -6px 0 0;
+  color: #4e6a79;
+  font-size: 10px;
+  overflow-wrap: anywhere;
 }
 
 .pixelpass-ceremony {
@@ -2246,12 +2167,12 @@ input {
   display: grid;
   place-items: center;
   color: #fff;
-  border: 1px solid #654b72;
+  border: 1px solid #315f75;
   border-radius: 50%;
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.68),
-    0 10px 24px rgba(76, 48, 87, 0.25);
-  background: linear-gradient(#c79bd3, #815b91 52%, #684775);
+    0 10px 24px rgba(31, 88, 113, 0.25);
+  background: linear-gradient(#9edbec, #3d8daf 52%, #286c8b);
 }
 
 .pixelpass-data-capsule svg {
@@ -2398,7 +2319,7 @@ input {
 .pixelpass-flow-loading > svg {
   width: 42px;
   height: 42px;
-  color: #805a91;
+  color: #287ca0;
 }
 
 .pixelpass-flow-loading .marquee {
@@ -2476,7 +2397,7 @@ input {
   width: 27px;
   height: 27px;
   flex: 0 0 27px;
-  color: #805b91;
+  color: #287ca0;
 }
 
 .pixelpass-passcode-explainer > div {
@@ -2590,6 +2511,37 @@ input {
   letter-spacing: 0.05em;
 }
 
+.pixelpass-passcode-digits {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2px;
+  overflow: hidden;
+}
+
+.pixelpass-passcode-digits > span {
+  display: block;
+  animation: pixelpass-digit-roll 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--digit-index) * 28ms);
+}
+
+.pixelpass-passcode-digits > span:nth-child(4) {
+  margin-left: 9px;
+}
+
+@keyframes pixelpass-digit-roll {
+  from {
+    opacity: 0.22;
+    filter: blur(2px);
+    transform: translateY(-0.9em) rotateX(-38deg);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) rotateX(0);
+  }
+}
+
 .pixelpass-passcode-value small {
   grid-column: 1 / -1;
   display: flex;
@@ -2677,7 +2629,7 @@ input {
 
 @media (max-width: 860px) {
   .pixelpass-flow-window {
-    height: calc(100vh - 84px);
+    height: calc(100vh - 16px);
     min-height: 0;
   }
 
@@ -2862,5 +2814,9 @@ input {
 
   .pixelpass-dial-progress {
     transition: none;
+  }
+
+  .pixelpass-passcode-digits > span {
+    animation: none;
   }
 }

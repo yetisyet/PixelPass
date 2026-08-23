@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowLeft,
   Check,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   ImageIcon,
@@ -13,7 +12,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Upload,
-} from "lucide-react"
+} from "@/components/win7_icons"
 import { useNavigate } from "react-router-dom"
 
 import background from "@/lib/background.jpg"
@@ -25,9 +24,7 @@ import paul from "@/lib/paul.png"
 import river from "@/lib/river.png"
 import { sendBackendRequest } from "@/lib/backend-client"
 import {
-  createDemoRecoveryFiles,
   initializeGuidedVault,
-  inspectRecoveryImages,
   recoverVault,
 } from "@/lib/vault-feature-client"
 
@@ -169,7 +166,6 @@ export default function HomeExperience() {
   const [ceremonyStage, setCeremonyStage] = useState(0)
   const [confirmMasterKey, setConfirmMasterKey] = useState("")
   const [error, setError] = useState("")
-  const [inspection, setInspection] = useState(null)
   const [isBusy, setIsBusy] = useState(false)
   const [masterKey, setMasterKey] = useState("")
   const [pastedImage, setPastedImage] = useState("")
@@ -210,7 +206,7 @@ export default function HomeExperience() {
         setBackendMode(-1)
         setError(startupError.message)
         setScreen("choice")
-        setStatusMessage("Backend unavailable — recovery and passcode prototypes remain available.")
+        setStatusMessage("Backend unavailable — reconnect it to create, unlock, or recover a vault.")
       }
     }
 
@@ -223,15 +219,6 @@ export default function HomeExperience() {
   useEffect(() => {
     setThreshold((current) => Math.min(Math.max(2, current), setupTotal))
   }, [setupTotal])
-
-  useEffect(
-    () => () => {
-      recoveryFiles.forEach((file) => {
-        if (file.preview?.startsWith("blob:")) URL.revokeObjectURL(file.preview)
-      })
-    },
-    [recoveryFiles],
-  )
 
   function goTo(nextScreen) {
     setError("")
@@ -387,49 +374,28 @@ export default function HomeExperience() {
     }
   }
 
-  function receiveRecoveryFiles(event) {
-    recoveryFiles.forEach((file) => {
-      if (file.preview?.startsWith("blob:")) URL.revokeObjectURL(file.preview)
-    })
-
-    const files = Array.from(event.target.files ?? []).map((file, index) => ({
-      id: `${file.name}-${file.lastModified}-${index}`,
-      name: file.name,
-      preview: URL.createObjectURL(file),
-      source: file,
-    }))
-
-    setRecoveryFiles(files)
-    setInspection(null)
-    setError("")
-  }
-
-  function loadRecoveryDemo() {
-    setRecoveryFiles(createDemoRecoveryFiles())
-    setInspection(null)
-    setError("")
-    setStatusMessage("Five demo recovery images are ready to inspect.")
-  }
-
-  async function inspectRecovery() {
+  async function chooseRecoveryFiles() {
     try {
-      setIsBusy(true)
+      const paths = await window.pixelPassBackend?.selectImagePaths?.()
+      if (!Array.isArray(paths)) {
+        throw new Error("The recovery image picker is not available.")
+      }
+      if (paths.length === 0) return
+
+      const files = paths.map((path, index) => ({
+        id: `${path}-${index}`,
+        name: basename(path),
+        path,
+      }))
+
+      setRecoveryFiles(files)
       setError("")
-      setStatusMessage("Inspecting images for PixelPass shares…")
-      const result = await inspectRecoveryImages(recoveryFiles.map((file) => file.source || file))
-      setInspection(result)
       setStatusMessage(
-        result.hasMixedVaults
-          ? "These images contain shares from different vaults — choose one matching set."
-          : result.validShares >= result.requiredShares
-          ? `${result.validShares} valid shares found — recovery is ready.`
-          : `${result.validShares} valid shares found — ${result.requiredShares} are required.`,
+        `${files.length} recovery ${files.length === 1 ? "image" : "images"} selected.`,
       )
-    } catch (inspectionError) {
-      setInspection(null)
-      setError(inspectionError.message)
-    } finally {
-      setIsBusy(false)
+    } catch (selectionError) {
+      setError(selectionError.message)
+      setStatusMessage("Recovery images could not be selected.")
     }
   }
 
@@ -440,13 +406,20 @@ export default function HomeExperience() {
     try {
       setIsBusy(true)
       setStatusMessage("Rebuilding the vault from image shares…")
-      const recoveryPromise = recoverVault({ inspection, masterKey: recoveryMasterKey })
+      const result = await recoverVault({
+        masterKey: recoveryMasterKey,
+        paths: recoveryFiles.map((file) => file.path),
+      })
 
       await runCeremony("recovery", async () => {
-        const result = await recoveryPromise
+        setStatusMessage(
+          result.readOnly
+            ? "Vault recovered in read-only mode from the available shares."
+            : "Vault recovered with full access.",
+        )
         navigate("/dashboard", {
           state: {
-            demoMode: result.isStub,
+            readOnly: result.readOnly,
             recoverySummary: result,
           },
         })
@@ -545,9 +518,6 @@ export default function HomeExperience() {
               <KeyRound aria-hidden="true" />
               {isBusy ? "Opening vault…" : "Open the vault"}
             </button>
-            <button disabled={isBusy} type="button" onClick={() => goTo("recovery")}>
-              Recover another vault
-            </button>
           </div>
         </form>
       </div>
@@ -577,7 +547,7 @@ export default function HomeExperience() {
               </div>
               <div className="pixelpass-source-rail" role="group" aria-label="Image source">
                 <button aria-pressed={setupSource === "sample"} className={setupSource === "sample" ? "is-selected" : ""} type="button" onClick={() => setSetupSource("sample")}>
-                  <strong>Sample pack</strong><small>Fastest for a demo</small>
+                  <strong>Sample pack</strong><small>Fastest setup</small>
                 </button>
                 <button aria-pressed={setupSource === "files"} className={setupSource === "files" ? "is-selected" : ""} type="button" onClick={chooseSetupFiles}>
                   <strong>Choose files</strong><small>Use your own images</small>
@@ -687,7 +657,7 @@ export default function HomeExperience() {
   }
 
   function renderRecovery() {
-    const isReady = inspection && !inspection.hasMixedVaults && inspection.validShares >= inspection.requiredShares
+    const isReady = recoveryFiles.length >= 2 && recoveryMasterKey.length > 0
 
     return (
       <div className="pixelpass-guided-flow">
@@ -697,83 +667,58 @@ export default function HomeExperience() {
           </button>
           <div>
             <h1>Recover a vault from images</h1>
-            <p>PixelPass will inspect the pictures, collect matching shares, and rebuild the encrypted vault.</p>
+            <p>Choose matching PixelPass PNG shares and use the vault's original master key.</p>
           </div>
-          <span className="pixelpass-demo-badge">Frontend demo</span>
         </div>
 
         <form className="pixelpass-recovery-layout" onSubmit={completeRecovery}>
           <section className="pixelpass-recovery-picker">
             <div className="pixelpass-step-copy">
               <h2>Bring back the images that carried the vault.</h2>
-              <p>Choose as many as you have. PixelPass only needs the original recovery threshold.</p>
+              <p>Choose at least the original recovery threshold. Select every share you still have for the best chance of restoring write access.</p>
             </div>
-            <input
-              accept="image/*"
-              className="sr-only"
-              multiple
-              ref={recoveryInputRef}
-              type="file"
-              onChange={receiveRecoveryFiles}
-            />
             <div className="pixelpass-picker-actions">
-              <button className="default" type="button" onClick={() => recoveryInputRef.current?.click()}>
+              <button className="default" disabled={isBusy} type="button" onClick={chooseRecoveryFiles}>
                 <Upload aria-hidden="true" /> Choose recovery images
-              </button>
-              <button type="button" onClick={loadRecoveryDemo}>
-                <PawPrint aria-hidden="true" /> Load cat-image demo
               </button>
             </div>
             {recoveryFiles.length > 0 ? (
-              <PreviewStrip files={recoveryFiles} variant="recovery" />
+              <>
+                <PreviewStrip files={recoveryFiles} variant="recovery" />
+                <p className="pixelpass-recovery-count">
+                  {recoveryFiles.length} PNG {recoveryFiles.length === 1 ? "share" : "shares"} selected
+                </p>
+              </>
             ) : (
               <div className="pixelpass-recovery-empty"><Images aria-hidden="true" /><span>No recovery images selected yet.</span></div>
             )}
-            <button disabled={isBusy || recoveryFiles.length === 0} type="button" onClick={inspectRecovery}>
-              <RefreshCw aria-hidden="true" /> {isBusy ? "Inspecting images…" : "Inspect selected images"}
-            </button>
           </section>
 
           <section className="pixelpass-recovery-result" aria-live="polite">
-            {!inspection ? (
-              <div className="pixelpass-result-placeholder">
-                <ShieldCheck aria-hidden="true" />
-                <strong>Share check waiting</strong>
-                <span>Select images, then inspect them before entering the master key.</span>
+            <div className={`pixelpass-recovery-readiness${recoveryFiles.length >= 2 ? " is-ready" : ""}`}>
+              <ShieldCheck aria-hidden="true" />
+              <div>
+                <strong>{recoveryFiles.length >= 2 ? "Ready to attempt recovery" : "Choose at least two shares"}</strong>
+                <span>
+                  PixelPass verifies the images and master key together. If fewer than all original shares are available, the recovered vault may be read-only.
+                </span>
               </div>
-            ) : (
-              <>
-                <div className={`pixelpass-share-verdict${isReady ? " is-ready" : " is-blocked"}`}>
-                  {isReady ? <CheckCircle2 aria-hidden="true" /> : <RefreshCw aria-hidden="true" />}
-                  <div>
-                    <strong>{inspection.hasMixedVaults ? "Images from different vaults" : `${inspection.validShares} valid shares found`}</strong>
-                    <span>{inspection.hasMixedVaults ? "Choose shares with one matching fingerprint" : `${inspection.requiredShares} matching shares are required`}</span>
-                  </div>
-                </div>
-                <div className="pixelpass-share-meter">
-                  {Array.from({ length: inspection.totalShares }, (_, index) => (
-                    <span className={index < inspection.validShares ? "is-found" : ""} key={index} />
-                  ))}
-                </div>
-                <dl className="pixelpass-recovery-facts">
-                  <div><dt>Vault fingerprint</dt><dd>{inspection.vaultFingerprint || "Mixed vaults"}</dd></div>
-                  <div><dt>Invalid images</dt><dd>{inspection.invalidCount}</dd></div>
-                  <div><dt>Backend</dt><dd>{inspection.isStub ? "Demo fixture" : "Connected"}</dd></div>
-                </dl>
-                <label htmlFor="recovery-master-key">Master key</label>
-                <input
-                  autoComplete="current-password"
-                  disabled={!isReady || isBusy}
-                  id="recovery-master-key"
-                  type="password"
-                  value={recoveryMasterKey}
-                  onChange={(event) => setRecoveryMasterKey(event.target.value)}
-                />
-                <button className="default" disabled={!isReady || isBusy || recoveryMasterKey.length < 8} type="submit">
-                  <KeyRound aria-hidden="true" /> {isBusy ? "Rebuilding vault…" : "Rebuild my vault"}
-                </button>
-              </>
-            )}
+            </div>
+            <label htmlFor="recovery-master-key">Master key</label>
+            <input
+              aria-describedby="recovery-master-key-help"
+              autoComplete="current-password"
+              disabled={isBusy}
+              id="recovery-master-key"
+              required
+              type="password"
+              value={recoveryMasterKey}
+              onChange={(event) => setRecoveryMasterKey(event.target.value)}
+            />
+            <small id="recovery-master-key-help">Enter the existing key exactly as it was created.</small>
+            <button className="default" disabled={!isReady || isBusy} type="submit">
+              <KeyRound aria-hidden="true" /> {isBusy ? "Rebuilding vault…" : "Rebuild my vault"}
+            </button>
           </section>
         </form>
         {error && <div className="pixelpass-inline-error" role="alert">{error}</div>}

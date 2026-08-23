@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { AlertTriangle } from "lucide-react"
+import { AlertTriangle } from "@/components/win7_icons"
 
 import Win7Dialog from "@/components/win7_dialog"
 

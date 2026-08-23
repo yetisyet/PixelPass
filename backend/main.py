@@ -1,11 +1,15 @@
 # the main python file
+# external imports
 import json
 import base64
 from io import BytesIO
+from PIL import Image
+
+# imports from other files
 import vault_manager
 import status_manager
 from structs import Vault, Entry, Config
-from PIL import Image
+
 """"
     Function that runs the entire backend.
     Acts like a server, waiting for the frontend to send something.
@@ -14,7 +18,7 @@ from PIL import Image
 """
 
 mode = -1
-mPassword = "pee"
+mPassword = "a"  # doesn't work with an empty string for reason
 
 
 """
@@ -115,9 +119,17 @@ def edit_password(usrInput, config):
     )
     status = vault_manager.add_entry(thisEntry, config, mPassword)
     if status == 0:
-        payload = {"action": 5, "success": True}
+        payload = {
+            "elecID": usrInput["elecID"],
+            "action": 5,
+            "success": True,
+        }
     else:
-        payload = {"action": 5, "success": False}
+        payload = {
+            "elecID": usrInput["elecID"],
+            "action": 5,
+            "success": False,
+        }
     print(json.dumps(payload))
 
 
@@ -128,26 +140,52 @@ def startup():  # should return a config instance
     print(json.dumps(payload))
     returnVal = json.loads(input())
     mPassword = returnVal["password"]
-    if mode == -1:
-        total = returnVal["total"]
-        majority = returnVal["majority"]
-        if total < 2 or majority < 2:
-            raise ValueError("Total and majority must both be at least 2")
-        if majority > total:
-            raise ValueError("Majority cannot be greater than total")
 
-        vault = vault_manager.init_vault(
-            returnVal["mode"], total, majority
-        )
-        mode_populate(returnVal)
-        conf = get_config()
-        status_manager.save_vault(vault, conf, mPassword)
-        success = True
+    if mode == -1:
+        new_mode = returnVal["mode"]
+
+        # Special behaviour for recovery
+        if new_mode == 5:  # Recovery
+            # The total and majority are not needed, we overwrite these when checking the master password!
+            vault = vault_manager.init_vault(new_mode, 0, 0)
+            mode_populate(returnVal)
+            conf = get_config()
+            success = vault_manager.check_master_password(
+                conf, mPassword
+            )  # Sets total and majority
+
+            if len(returnVal["paths"]) < conf["storage_options"]["total"]:
+                conf["storage_options"]["read_only"] = True
+        else:
+            total = returnVal["total"]
+            majority = returnVal["majority"]
+            if total < 2 or majority < 2:
+                raise ValueError("Total and majority must both be at least 2")
+            if majority > total:
+                raise ValueError("Majority cannot be greater than total")
+
+            vault = vault_manager.init_vault(new_mode, total, majority)
+            mode_populate(returnVal)
+            conf = get_config()
+            status_manager.save_vault(vault, conf, mPassword)
+            success = True
     else:
         conf = get_config()
         success = vault_manager.check_master_password(conf, mPassword)
-    print(json.dumps({"success": success, "elecID": returnVal["elecID"]}))
+    print(
+        json.dumps(
+            {
+                "success": success,
+                "elecID": returnVal["elecID"],
+                "read_only": conf["storage_options"]["read_only"],
+            }
+        )
+    )
 
+    if not success:
+        return startup()
+
+    # This was successful
     return conf
 
 
@@ -190,7 +228,7 @@ def mode_populate(returnVal):
         case 4:
             vault_manager.populate_vault_self()
         case 5:
-            raise ("Not implemented")
+            vault_manager.populate_vault_path_images(returnVal["paths"])
 
 
 def main_server(config):

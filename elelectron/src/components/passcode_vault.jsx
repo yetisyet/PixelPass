@@ -8,7 +8,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Trash2,
-} from "lucide-react"
+} from "@/components/win7_icons"
 
 import Win7Dialog from "@/components/win7_dialog"
 import {
@@ -75,7 +75,7 @@ function AddPasscodeDialog({ onCreate, onOpenChange, open }) {
           <span className="pixelpass-dialog-icon" aria-hidden="true"><Clock3 /></span>
           <div>
             <h2>Keep the code beside its login.</h2>
-            <p>The frontend demo keeps this entry in memory only. The backend handoff will encrypt the authenticator secret.</p>
+            <p>PixelPass generates a standard six-digit code locally. This entry lasts only until you close the app.</p>
           </div>
         </div>
         {error && <div className="pixelpass-error-panel" role="alert"><strong>Could not add this passcode</strong><p>{error}</p></div>}
@@ -85,9 +85,9 @@ function AddPasscodeDialog({ onCreate, onOpenChange, open }) {
           <label htmlFor="passcode-account">Account</label>
           <input id="passcode-account" maxLength={160} placeholder="you@example.com" required value={accountName} onChange={(event) => setAccountName(event.target.value)} />
           <label htmlFor="passcode-secret">Authenticator secret</label>
-          <input autoComplete="off" id="passcode-secret" minLength={8} placeholder="Base32 secret" required type="password" value={secret} onChange={(event) => setSecret(event.target.value)} />
+          <input autoComplete="off" id="passcode-secret" minLength={16} placeholder="Base32 secret" required spellCheck="false" type="password" value={secret} onChange={(event) => setSecret(event.target.value)} />
         </div>
-        <p className="pixelpass-form-note"><ShieldCheck aria-hidden="true" />Never store the rolling six-digit code. The encrypted vault stores the secret used to produce it.</p>
+        <p className="pixelpass-form-note"><ShieldCheck aria-hidden="true" />Use the Base32 secret shown when enabling two-factor authentication. It stays in this app session only.</p>
       </form>
     </Win7Dialog>
   )
@@ -179,7 +179,7 @@ export default function PasscodeVault({ addOpen, onAddOpenChange, onStatusChange
 
   function receiveCreated(created) {
     setPasscodes((current) => [created, ...current])
-    onStatusChange?.(`Added ${created.issuer} passcode in frontend demo mode.`)
+    onStatusChange?.(`Added ${created.issuer} passcode for this session.`)
   }
 
   async function remove(record) {
@@ -201,16 +201,15 @@ export default function PasscodeVault({ addOpen, onAddOpenChange, onStatusChange
         <header className="pixelpass-passcodes-heading">
           <div>
             <h1 id="passcodes-heading">Rolling passcodes</h1>
-            <p>Authenticator codes refresh together every 30 seconds.</p>
+            <p>Real authenticator codes refresh every 30 seconds and stay for this session.</p>
           </div>
-          <span className="pixelpass-demo-badge">Demo data</span>
         </header>
 
         <div className="pixelpass-passcode-explainer">
           <Clock3 aria-hidden="true" />
           <div>
-            <strong>The number rolls; the secret stays encrypted.</strong>
-            <span>Copy the current six-digit code before its timer reaches zero.</span>
+            <strong>Six digits, standard TOTP.</strong>
+            <span>Generated locally with HMAC-SHA1. Copy it before the timer reaches zero.</span>
           </div>
           <button type="button" onClick={() => onAddOpenChange(true)}><Plus aria-hidden="true" /> Add passcode</button>
         </div>
@@ -230,8 +229,17 @@ export default function PasscodeVault({ addOpen, onAddOpenChange, onStatusChange
                   <strong>{passcode.issuer}</strong>
                   <span>{passcode.accountName}</span>
                 </div>
-                <button className="pixelpass-passcode-value" type="button" onClick={() => copyCode(passcode)}>
-                  <span>{passcode.code.slice(0, 3)}</span><span>{passcode.code.slice(3)}</span>
+                <button
+                  aria-label={`Copy ${passcode.code} for ${passcode.issuer}`}
+                  className="pixelpass-passcode-value"
+                  type="button"
+                  onClick={() => copyCode(passcode)}
+                >
+                  <span className="pixelpass-passcode-digits" key={`${passcode.id}-${passcode.code}`}>
+                    {Array.from(passcode.code, (digit, index) => (
+                      <span key={index} style={{ "--digit-index": index }}>{digit}</span>
+                    ))}
+                  </span>
                   <small>{copiedId === passcode.id ? <><Check aria-hidden="true" /> Copied</> : <><Copy aria-hidden="true" /> Copy code</>}</small>
                 </button>
                 <PasscodeDial now={now} passcode={passcode} />

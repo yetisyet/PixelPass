@@ -2,18 +2,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   BookOpen,
   Eye,
-  FlaskConical,
   KeyRound,
   Lock,
   LockKeyhole,
   PawPrint,
   Pencil,
   Plus,
+  RefreshCw,
   Search,
   ShieldCheck,
   Star,
   X,
-} from "lucide-react"
+} from "@/components/win7_icons"
 import { useLocation, useNavigate } from "react-router-dom"
 import background from "../lib/background.jpg"
 import PasscodeVault from "@/components/passcode_vault"
@@ -71,25 +71,6 @@ const categories = [
   { id: "passcodes", label: "Passcodes", Icon: ShieldCheck },
 ]
 
-const demoEntries = [
-  {
-    id: "demo-github",
-    serviceName: "Demo GitHub",
-    username: "demo@pixelpass.app",
-    isFavorite: true,
-    demoPassword: "demo-github-password-67",
-  },
-  {
-    id: "demo-discord",
-    serviceName: "Demo Discord",
-    username: "demo-user",
-    isFavorite: false,
-    demoPassword: "demo-discord-password-42",
-  },
-]
-
-
-
 function normalizeEntries(entries) {
   return entries.map((entry, index) => {
     const id = entry.id ?? entry.Id
@@ -115,7 +96,7 @@ function nextPasswordId(entries) {
   return numericIds.length === 0 ? 1 : Math.max(...numericIds) + 1
 }
 
-function PasswordRow({ onEdit, onRemove, onView, password }) {
+function PasswordRow({ isReadOnly, onEdit, onRemove, onView, password }) {
   return (
     <tr>
       <td>
@@ -146,6 +127,8 @@ function PasswordRow({ onEdit, onRemove, onView, password }) {
           <button
             aria-label={`Edit ${password.serviceName}`}
             className="pixelpass-edit-button"
+            disabled={isReadOnly}
+            title={isReadOnly ? "This recovered vault is read-only" : undefined}
             type="button"
             onClick={() => onEdit(password)}
           >
@@ -155,7 +138,8 @@ function PasswordRow({ onEdit, onRemove, onView, password }) {
           <button
             aria-label={`Remove ${password.serviceName}`}
             className="pixelpass-remove-button"
-            title="Remove login"
+            disabled={isReadOnly}
+            title={isReadOnly ? "This recovered vault is read-only" : "Remove login"}
             type="button"
             onClick={() => onRemove(password)}
           >
@@ -170,6 +154,7 @@ function PasswordRow({ onEdit, onRemove, onView, password }) {
 export default function Dashboard() {
   const location = useLocation()
   const navigate = useNavigate()
+  const isReadOnly = Boolean(location.state?.readOnly)
   const { pos, onMouseDown } = useDraggable({ x: 0, y: 0 })
   const [activeCategory, setActiveCategory] = useState("all")
   const [error, setError] = useState("")
@@ -177,7 +162,6 @@ export default function Dashboard() {
   const [entryToRemove, setEntryToRemove] = useState(null)
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isAddPasscodeOpen, setIsAddPasscodeOpen] = useState(false)
-  const [isDemoMode, setIsDemoMode] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isRevealOpen, setIsRevealOpen] = useState(false)
@@ -213,28 +197,26 @@ export default function Dashboard() {
       if (requestId !== listRequestId.current) return
 
       setPasswords(normalizeEntries(response.data.entries))
-      setIsDemoMode(false)
-      setStatusMessage("Vault has been locked.")
+      setStatusMessage(
+        isReadOnly
+          ? "recovered vault opened in read-only mode"
+          : "vault unlocked nyah ^w^",
+      )
     } catch (loadError) {
       if (requestId !== listRequestId.current) return
       setPasswords([])
-      setIsDemoMode(false)
       setError(loadError.message)
       setStatusMessage("could not load the vault T~T")
     } finally {
       if (requestId === listRequestId.current) setIsLoading(false)
     }
-  }, [])
+  }, [isReadOnly])
 
   useEffect(() => {
     if (hasLoadedPasswords.current) return
     hasLoadedPasswords.current = true
-    if (location.state?.demoMode) {
-      loadDemoPasswords("Recovered demo vault opened from 3 image shares.")
-      return
-    }
     loadPasswords()
-  }, [loadPasswords, location.state])
+  }, [loadPasswords])
 
   const visiblePasswords = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -256,17 +238,6 @@ export default function Dashboard() {
   const activeCategoryLabel =
     categories.find(({ id }) => id === activeCategory)?.label ?? "All items"
 
-  function loadDemoPasswords(message = "Demo paws loaded >w<") {
-    listRequestId.current += 1
-    setPasswords(demoEntries)
-    setActiveCategory("all")
-    setError("")
-    setIsDemoMode(true)
-    setIsLoading(false)
-    setSearch("")
-    setStatusMessage(typeof message === "string" ? message : "Demo paws loaded >w<")
-  }
-
   async function openPassword(entry) {
     const requestId = ++revealRequestId.current
     setSelectedEntry(entry)
@@ -276,11 +247,6 @@ export default function Dashboard() {
     setIsRevealing(true)
 
     try {
-      if (entry.demoPassword) {
-        setRevealedPassword(entry.demoPassword)
-        return
-      }
-
       const response = await sendBackendRequest({
         action: 2,
         data: {
@@ -320,20 +286,8 @@ export default function Dashboard() {
   }
 
   async function createPassword(values) {
-    if (isDemoMode) {
-      setPasswords((currentPasswords) => [
-        {
-          id: `demo-${Date.now()}`,
-          serviceName: values.serviceName,
-          username: values.username,
-          isFavorite: values.isFavorite,
-          demoPassword: values.password,
-        },
-        ...currentPasswords,
-      ])
-      setActiveCategory("all")
-      setStatusMessage("saved password nyah >///<")
-      return
+    if (isReadOnly) {
+      throw new Error("This recovered vault is read-only. Recover it again with every original share to make changes.")
     }
 
     const createdEntryId = nextPasswordId(passwords)
@@ -377,22 +331,23 @@ export default function Dashboard() {
 
   async function editPassword(values) {
     if (!entryToEdit) throw new Error("No login was selected.")
+    if (isReadOnly) {
+      throw new Error("This recovered vault is read-only. Recover it again with every original share to make changes.")
+    }
 
-    if (!isDemoMode) {
-      const response = await sendBackendRequest({
-        action: 5,
-        data: {
-          id: entryToEdit.id,
-          serviceName: values.serviceName,
-          username: values.username,
-          password: values.password,
-          isFav: values.isFavorite,
-        },
-      })
+    const response = await sendBackendRequest({
+      action: 5,
+      data: {
+        id: entryToEdit.id,
+        serviceName: values.serviceName,
+        username: values.username,
+        password: values.password,
+        isFav: values.isFavorite,
+      },
+    })
 
-      if (!response.success) {
-        throw new Error(response.error ?? "Failed to edit password entry")
-      }
+    if (!response.success) {
+      throw new Error(response.error ?? "Failed to edit password entry")
     }
 
     setPasswords((currentPasswords) =>
@@ -403,7 +358,6 @@ export default function Dashboard() {
               serviceName: values.serviceName,
               username: values.username,
               isFavorite: values.isFavorite,
-              ...(isDemoMode ? { demoPassword: values.password } : {}),
             }
           : entry,
       ),
@@ -422,17 +376,19 @@ export default function Dashboard() {
   }
 
   async function removePassword(entry) {
-    if (!isDemoMode) {
-      const response = await sendBackendRequest({
-        action: 4,
-        data: {
-          id: entry.id,
-        },
-      })
+    if (isReadOnly) {
+      throw new Error("This recovered vault is read-only. Recover it again with every original share to make changes.")
+    }
 
-      if (!response.success) {
-        throw new Error(response.error ?? "Failed to remove password entry")
-      }
+    const response = await sendBackendRequest({
+      action: 4,
+      data: {
+        id: entry.id,
+      },
+    })
+
+    if (!response.success) {
+      throw new Error(response.error ?? "Failed to remove password entry")
     }
 
     setPasswords((currentPasswords) =>
@@ -453,11 +409,11 @@ export default function Dashboard() {
   function selectCategory(id) {
     setActiveCategory(id)
     if (id === "passcodes") {
-      setStatusMessage("Rolling passcodes are using frontend demo data.")
+      setStatusMessage("Real six-digit passcodes refresh every 30 seconds.")
     } else if (error) {
       setStatusMessage("could not load the vault T~T")
-    } else if (isDemoMode) {
-      setStatusMessage("demo vault loaded >w<")
+    } else if (isReadOnly) {
+      setStatusMessage("recovered vault is open in read-only mode")
     } else {
       setStatusMessage("vault unlocked nyah ^w^")
     }
@@ -486,7 +442,7 @@ export default function Dashboard() {
           style={{ cursor: "grab" }}
         >
           <div className="title-bar-text">
-            PixelPass — {activeCategory === "passcodes" ? "Authenticator demo" : isDemoMode ? "Demo vault" : error ? "Vault connection" : "Unlocked vault"}
+            PixelPass — {activeCategory === "passcodes" ? "Authenticator" : error ? "Vault connection" : isReadOnly ? "Recovered vault — read only" : "Unlocked vault"}
           </div>
           <div
             className="title-bar-controls"
@@ -499,26 +455,15 @@ export default function Dashboard() {
         </div>
 
         <div className="window-body pixelpass-window-body">
-          <div className="pixelpass-command-bar" role="toolbar" aria-label="Vault actions">
-            <div className="pixelpass-command-group">
-              <button type="button" onClick={loadDemoPasswords}>
-                <FlaskConical aria-hidden="true" />
-                Load demo
-              </button>
-              <button type="button" onClick={lockVault}>
-                <LockKeyhole aria-hidden="true" />
-                Lock vault
-              </button>
+          {isReadOnly && (
+            <div className="pixelpass-read-only-notice" role="status">
+              <Lock aria-hidden="true" />
+              <div>
+                <strong>Recovered in read-only mode</strong>
+                <span>You can view and reveal saved logins. Recover again with every original image share to add, edit, or remove entries.</span>
+              </div>
             </div>
-            <button
-              className="default"
-              type="button"
-              onClick={() => activeCategory === "passcodes" ? setIsAddPasscodeOpen(true) : setIsAddOpen(true)}
-            >
-              <Plus aria-hidden="true" />
-              {activeCategory === "passcodes" ? "Add passcode" : "New login"}
-            </button>
-          </div>
+          )}
 
           <div className="pixelpass-explorer">
             <aside className="pixelpass-sidebar">
@@ -573,38 +518,35 @@ export default function Dashboard() {
                   </p>
                 </div>
 
-                <div className="pixelpass-search">
-                  <label className="sr-only" htmlFor="vault-search">
-                    Search this vault
-                  </label>
-                  <Search aria-hidden="true" className="pixelpass-search-icon" />
-                  <input
-                    aria-controls="password-list"
-                    id="vault-search"
-                    placeholder="Search ur vault"
-                    role="searchbox"
-                    type="text"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                  />
-                  <PawPrint aria-hidden="true" className="pixelpass-search-paw" />
-                </div>
-              </div>
-
-              {error && isDemoMode && (
-                <div className="pixelpass-offline-notice" role="status">
-                  <PawPrint aria-hidden="true" />
-                  <div>
-                    <strong>backend is hiding T~T</strong>
-                    <span>
-                      demo data is loaded, so tabs and search still work nyah ^w^
-                    </span>
+                <div className="pixelpass-content-actions">
+                  <div className="pixelpass-search">
+                    <label className="sr-only" htmlFor="vault-search">
+                      Search this vault
+                    </label>
+                    <Search aria-hidden="true" className="pixelpass-search-icon" />
+                    <input
+                      aria-controls="password-list"
+                      id="vault-search"
+                      placeholder="Search ur vault"
+                      role="searchbox"
+                      type="text"
+                      value={search}
+                      onChange={(event) => setSearch(event.target.value)}
+                    />
+                    <PawPrint aria-hidden="true" className="pixelpass-search-paw" />
                   </div>
-                  <button type="button" onClick={loadPasswords}>
-                    Retry backend
+                  <button
+                    className="default"
+                    disabled={isReadOnly}
+                    title={isReadOnly ? "This recovered vault is read-only" : undefined}
+                    type="button"
+                    onClick={() => setIsAddOpen(true)}
+                  >
+                    <Plus aria-hidden="true" />
+                    New login
                   </button>
                 </div>
-              )}
+              </div>
 
               <div className="pixelpass-list-frame" id="password-list">
                 {isLoading ? (
@@ -618,9 +560,9 @@ export default function Dashboard() {
                     <PawPrint aria-hidden="true" />
                     <h2>could not load the vault T~T</h2>
                     <p>{error}</p>
-                    <button className="default" type="button" onClick={loadDemoPasswords}>
-                      <FlaskConical aria-hidden="true" />
-                      Try the demo &gt;w&lt;
+                    <button className="default" type="button" onClick={loadPasswords}>
+                      <RefreshCw aria-hidden="true" />
+                      Retry backend
                     </button>
                   </div>
                 ) : visiblePasswords.length > 0 ? (
@@ -637,6 +579,7 @@ export default function Dashboard() {
                       <tbody>
                         {visiblePasswords.map((password) => (
                           <PasswordRow
+                            isReadOnly={isReadOnly}
                             key={password.id}
                             password={password}
                             onEdit={openEditDialog}
@@ -679,7 +622,7 @@ export default function Dashboard() {
               : `${visiblePasswords.length} of ${passwords.length} items`}
           </p>
           <p className="status-bar-field">
-            {activeCategory === "passcodes" ? "Demo data" : isDemoMode ? "Demo mode" : error ? "Offline" : "Unlocked"}
+            {activeCategory === "passcodes" ? "Session-only" : error ? "Offline" : isReadOnly ? "Read-only" : "Unlocked"}
           </p>
         </div>
       </section>
