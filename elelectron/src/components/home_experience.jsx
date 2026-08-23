@@ -17,7 +17,12 @@ import {
 import { useNavigate } from "react-router-dom"
 
 import background from "@/lib/background.jpg"
+import bundesliga from "@/lib/Bundesliga.png"
+import car from "@/lib/car.png"
+import concert from "@/lib/concert.png"
 import logo from "@/lib/logo.png"
+import paul from "@/lib/paul.png"
+import river from "@/lib/river.png"
 import { sendBackendRequest } from "@/lib/backend-client"
 import {
   createDemoRecoveryFiles,
@@ -28,6 +33,14 @@ import {
 
 const MASTER_KEY_REGEX =
   /^(?=.*\d)(?=.*[A-Z])(?=.*[a-z])(?=.*[^\w\d\s:])([^\s]){8,16}$/
+
+const sampleImages = [
+  { id: "sample-car", name: "car.png", preview: car },
+  { id: "sample-bundesliga", name: "bundesliga.png", preview: bundesliga },
+  { id: "sample-concert", name: "concert.png", preview: concert },
+  { id: "sample-paul", name: "paul.png", preview: paul },
+  { id: "sample-river", name: "river.png", preview: river },
+]
 
 const setupSteps = ["Choose images", "Recovery strength", "Seal the vault"]
 const ceremonyStages = {
@@ -51,15 +64,24 @@ function basename(path) {
   return path?.split(/[\\/]/).pop() || "Selected image"
 }
 
-function PreviewStrip({ files, total = 5, variant = "setup" }) {
-  const visibleFiles = files.length > 0 ? files.slice(0, 5) : Array.from({ length: total })
+function PreviewStrip({
+  files,
+  maxVisible = 5,
+  requiredCount = null,
+  total = 5,
+  variant = "setup",
+}) {
+  const visibleFiles =
+    files.length > 0
+      ? files.slice(0, maxVisible)
+      : Array.from({ length: Math.min(total, maxVisible) })
 
   return (
     <div className={`pixelpass-image-strip is-${variant}`} aria-label={`${visibleFiles.length} selected images`}>
       {visibleFiles.map((file, index) => (
         <div
-          aria-label={`${file?.name || basename(file?.path) || `sample-${index + 1}.png`}, ${variant === "recovery" ? `share ${index + 1}` : "cover image"}`}
-          className="pixelpass-image-tile"
+          aria-label={`${file?.name || basename(file?.path) || `sample-${index + 1}.png`}, ${variant === "recovery" || variant === "threshold" ? `share ${index + 1}` : "cover image"}`}
+          className={`pixelpass-image-tile${requiredCount !== null && index < requiredCount ? " is-required" : ""}${requiredCount !== null && index >= requiredCount ? " is-optional" : ""}`}
           key={file?.id || file?.name || file?.path || index}
           style={file?.preview ? { backgroundImage: `url(${file.preview})` } : undefined}
         >
@@ -69,7 +91,7 @@ function PreviewStrip({ files, total = 5, variant = "setup" }) {
             <>
               <ImageIcon aria-hidden="true" />
               <span>{file?.name || basename(file?.path) || `sample-${index + 1}.png`}</span>
-              <small>{variant === "recovery" ? `share ${index + 1}` : "cover image"}</small>
+              <small>{variant === "recovery" || variant === "threshold" ? `share ${index + 1}` : "cover image"}</small>
             </>
           )}
         </div>
@@ -249,8 +271,20 @@ export default function HomeExperience() {
         mode: 1,
       }
     }
-    if (setupSource === "files") return { ...common, mode: 3, paths: selectedPaths }
-    return { ...common, mode: "frontend-sample", sampleImageUrl: logo }
+    if (setupSource === "files") {
+      return {
+        ...common,
+        mode: 3,
+        paths: selectedPaths.map((file) =>
+          typeof file === "string" ? file : file.path,
+        ),
+      }
+    }
+    return {
+      ...common,
+      mode: "frontend-sample",
+      sampleImageUrls: sampleImages.map(({ preview }) => preview),
+    }
   }
 
   async function runCeremony(kind, finalAction) {
@@ -385,13 +419,7 @@ export default function HomeExperience() {
   }
 
   const setupFiles = useMemo(() => {
-    if (setupSource === "sample") {
-      return Array.from({ length: 5 }, (_, index) => ({
-        id: `sample-${index}`,
-        name: `pixelpass-sample-${index + 1}.png`,
-        preview: logo,
-      }))
-    }
+    if (setupSource === "sample") return sampleImages
     if (setupSource === "paste" && pastedImage) {
       return Array.from({ length: 5 }, (_, index) => ({
         id: `pasted-${index}`,
@@ -400,7 +428,16 @@ export default function HomeExperience() {
       }))
     }
     if (setupSource === "files") {
-      return selectedPaths.map((path, index) => ({ id: `${path}-${index}`, name: basename(path), path }))
+      return selectedPaths.map((file, index) => {
+        const path = typeof file === "string" ? file : file.path
+
+        return {
+          id: `${path}-${index}`,
+          name: typeof file === "string" ? basename(path) : file.name,
+          path,
+          preview: typeof file === "string" ? null : file.preview,
+        }
+      })
     }
     return []
   }, [pastedImage, selectedPaths, setupSource])
@@ -415,7 +452,6 @@ export default function HomeExperience() {
             PixelPass encrypts your secrets, splits them into recovery shares, and hides those shares inside ordinary images.
           </p>
           <div className="pixelpass-proof-line">
-            <ShieldCheck aria-hidden="true" />
             <span>No separate vault file sitting in plain sight.</span>
           </div>
         </div>
@@ -447,7 +483,6 @@ export default function HomeExperience() {
       <div className="pixelpass-unlock-layout">
         <div className="pixelpass-unlock-art">
           <img src={logo} alt="" />
-          <div className="pixelpass-unlock-seal"><LockKeyhole aria-hidden="true" /></div>
         </div>
         <form className="pixelpass-unlock-form" onSubmit={unlockVault}>
           <h1>Welcome back to your image vault.</h1>
@@ -514,7 +549,11 @@ export default function HomeExperience() {
                   {pastedImage ? <img src={pastedImage} alt="Pasted vault cover" /> : <><ImageIcon aria-hidden="true" /><span>Click here and press Ctrl+V</span></>}
                 </div>
               ) : (
-                <PreviewStrip files={setupFiles} total={setupTotal} />
+                <PreviewStrip
+                  files={setupFiles}
+                  maxVisible={setupTotal}
+                  total={setupTotal}
+                />
               )}
             </div>
           )}
@@ -525,14 +564,13 @@ export default function HomeExperience() {
                 <h2>How many images should be required?</h2>
                 <p>A higher threshold demands more images. A lower threshold gives you more room to lose one.</p>
               </div>
-              <div className="pixelpass-threshold-visual" aria-hidden="true">
-                {Array.from({ length: setupTotal }, (_, index) => (
-                  <span className={index < threshold ? "is-required" : ""} key={index}>
-                    <ImageIcon />
-                    <small>{index + 1}</small>
-                  </span>
-                ))}
-              </div>
+              <PreviewStrip
+                files={setupFiles}
+                maxVisible={setupTotal}
+                requiredCount={threshold}
+                total={setupTotal}
+                variant="threshold"
+              />
               <label className="pixelpass-threshold-control" htmlFor="vault-threshold">
                 <span>Required images</span>
                 <strong>{threshold} of {setupTotal}</strong>
@@ -703,16 +741,37 @@ export default function HomeExperience() {
 
   function renderCeremony() {
     const stages = ceremonyStages[ceremonyKind]
+    const ceremonyFiles = ceremonyKind === "setup" ? setupFiles : recoveryFiles
+    const visibleCeremonyFiles = ceremonyFiles.slice(0, 5)
 
     return (
       <div className="pixelpass-ceremony" aria-live="polite">
         <div className="pixelpass-ceremony-scene" aria-hidden="true">
           <div className="pixelpass-data-capsule"><LockKeyhole /></div>
           <div className="pixelpass-share-flight">
-            {Array.from({ length: 5 }, (_, index) => <span key={index}>{index + 1}</span>)}
+            {visibleCeremonyFiles.map((file, index) => (
+              <span key={file?.id || file?.name || index}>{index + 1}</span>
+            ))}
           </div>
-          <div className="pixelpass-ceremony-images">
-            {Array.from({ length: 5 }, (_, index) => <span key={index}><ImageIcon /></span>)}
+          <div
+            className="pixelpass-ceremony-images"
+            style={{
+              gridTemplateColumns: `repeat(${visibleCeremonyFiles.length}, minmax(0, 1fr))`,
+            }}
+          >
+            {visibleCeremonyFiles.map((file, index) => (
+              <span
+                className={file.preview ? "has-preview" : ""}
+                key={file.id || file.name || index}
+                style={
+                  file.preview
+                    ? { backgroundImage: `url(${file.preview})` }
+                    : undefined
+                }
+              >
+                {!file.preview && <ImageIcon />}
+              </span>
+            ))}
           </div>
         </div>
         <h1>{ceremonyKind === "setup" ? "Your vault is disappearing into the images." : "Your vault is coming back from the images."}</h1>
