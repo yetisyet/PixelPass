@@ -29,5 +29,5 @@ NOTE: if you would like to reset the app please
 
 ---------
 
-## Coders:
+## Pixel Pass tteam:
 Tim, Jayden, Zwe, Aki, Ash
