@@ -82,15 +82,17 @@ export async function initializeGuidedVault({ backendRequest }) {
   if (backendRequest.mode === "frontend-sample") {
     /**
      * FRONTEND_ADAPTER(sample-five)
-     * The existing mode-4 sample pack expands to every bundled image. Send one
-     * bundled PNG through mode 1 instead, where the existing backend repeats it
-     * to the requested total. This keeps the visible 3-of-5 contract truthful
-     * without changing Python.
+     * Convert each bundled sample PNG into the existing mode-1 base64 payload
+     * so the five images shown in the UI are the five images actually mutated.
      */
-    const { sampleImageUrl, ...request } = backendRequest
-    const samplePayload = await imageUrlToPngPayload(sampleImageUrl)
-    if (!samplePayload) throw new Error("The five-image sample pack could not be prepared.")
-    resolvedRequest = { ...request, data: [samplePayload], mode: 1 }
+    const { sampleImageUrls, ...request } = backendRequest
+    const samplePayloads = await Promise.all(
+      sampleImageUrls.map((imageUrl) => imageUrlToPngPayload(imageUrl)),
+    )
+    if (samplePayloads.length === 0 || samplePayloads.some((payload) => !payload)) {
+      throw new Error("The five-image sample pack could not be prepared.")
+    }
+    resolvedRequest = { ...request, data: samplePayloads, mode: 1 }
   }
 
   return sendBackendRequest(resolvedRequest)

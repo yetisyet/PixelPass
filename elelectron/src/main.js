@@ -1,4 +1,4 @@
-import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage } from 'electron';
 import { randomUUID } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -195,7 +195,20 @@ ipcMain.handle('dialog:select-image-paths', async () => {
     title: 'Choose PixelPass PNG images',
   });
 
-  return selection.canceled ? [] : selection.filePaths;
+  if (selection.canceled) return [];
+
+  return selection.filePaths.map((filePath) => {
+    const image = nativeImage.createFromPath(filePath);
+    const preview = image.isEmpty()
+      ? null
+      : image.resize({ quality: 'good', width: 320 }).toDataURL();
+
+    return {
+      name: path.basename(filePath),
+      path: filePath,
+      preview,
+    };
+  });
 });
 
 ipcMain.handle('python:request', (_event, request) => {

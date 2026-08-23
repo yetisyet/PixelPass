@@ -152,7 +152,7 @@ input {
   --pixelpass-muted: #526674;
   --pixelpass-blue: #0b6ead;
   --pixelpass-soft-blue: #e8f5ff;
-  --pixelpass-paw: #197aa6;
+  --pixelpass-paw: #247da8;
   min-height: 100vh;
   color: var(--pixelpass-ink);
   font-family: "Segoe UI", SegoeUI, Tahoma, sans-serif;
@@ -172,12 +172,61 @@ input {
   align-items: center;
 }
 
-.pixelpass-win7-icon {
-  display: inline-block;
-  overflow: visible;
-  flex: 0 0 auto;
-  vertical-align: middle;
-  filter: drop-shadow(0 1px 1px rgba(22, 61, 80, 0.24));
+.pixelpass-brand {
+  gap: 9px;
+  min-width: 0;
+  text-shadow: 0 1px rgba(255, 255, 255, 0.8);
+}
+
+.pixelpass-brand > span:last-child {
+  min-width: 0;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.08;
+}
+
+.pixelpass-brand strong {
+  font-size: 15px;
+  letter-spacing: 0.01em;
+}
+
+.pixelpass-brand small {
+  margin-top: 3px;
+  color: #345b71;
+  font-size: 10px;
+}
+
+.pixelpass-brand-icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  color: #fff;
+  border: 1px solid rgba(33, 64, 84, 0.9);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px rgba(255, 255, 255, 0.82),
+    inset 0 -1px rgba(22, 69, 96, 0.42),
+    0 1px 2px rgba(12, 42, 58, 0.4);
+  background: linear-gradient(#8fd3f0, #3e94bf 48%, #276f99 52%, #5ca9cd);
+}
+
+.pixelpass-brand-icon svg {
+  width: 21px;
+  height: 21px;
+  filter: drop-shadow(0 1px rgba(18, 65, 92, 0.78));
+}
+
+.pixelpass-route-buttons {
+  gap: 6px;
+}
+
+.win7 .pixelpass-route-buttons button {
+  min-width: 88px;
+  min-height: 30px;
+  justify-content: center;
+  gap: 6px;
 }
 
 .pixelpass-action-cell button svg,
@@ -1398,8 +1447,8 @@ input {
 }
 
 .pixelpass-path-button:nth-child(2) .pixelpass-path-icon {
-  border-color: #4d7c5d;
-  background: linear-gradient(#a6d99d, #5aa36d 49%, #397d53 51%, #79bc86);
+  border-color: #315f7b;
+  background: linear-gradient(#9ad7ee, #4b9bc2 49%, #2d739c 51%, #68b2d2);
 }
 
 .pixelpass-path-icon svg {
@@ -1699,8 +1748,8 @@ input {
 
 .pixelpass-image-tile:nth-child(2n) {
   background:
-    linear-gradient(rgba(241, 250, 247, 0.44), rgba(161, 208, 184, 0.74)),
-    linear-gradient(145deg, #dff1e8, #78b99a);
+    linear-gradient(rgba(241, 250, 255, 0.44), rgba(153, 203, 229, 0.74)),
+    linear-gradient(145deg, #d9effa, #6faed1);
   background-position: center;
   background-size: cover;
 }
@@ -1747,6 +1796,46 @@ input {
   margin-top: 3px;
   color: #466879;
   font-size: 8px;
+}
+
+.pixelpass-image-strip.is-threshold {
+  min-height: 86px;
+  grid-template-columns: repeat(auto-fit, minmax(58px, 1fr));
+  gap: 6px;
+  margin: 20px 0 14px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.pixelpass-image-strip.is-threshold .pixelpass-image-tile {
+  height: 78px;
+  padding: 5px;
+  transition: opacity 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.pixelpass-image-strip.is-threshold .pixelpass-image-tile.is-required {
+  border-color: #2b8b65;
+  box-shadow:
+    inset 0 0 0 2px rgba(116, 255, 190, 0.58),
+    0 0 9px rgba(42, 177, 115, 0.32);
+}
+
+.pixelpass-image-strip.is-threshold .pixelpass-image-tile.is-required::before {
+  content: "REQUIRED";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  z-index: 2;
+  padding: 2px 3px;
+  color: #effff7;
+  background: rgba(14, 91, 62, 0.88);
+  font-size: 6px;
+  letter-spacing: 0.04em;
+}
+
+.pixelpass-image-strip.is-threshold .pixelpass-image-tile.is-optional {
+  opacity: 0.48;
+  filter: grayscale(0.55);
 }
 
 .pixelpass-paste-zone {
@@ -2131,7 +2220,9 @@ input {
 
 .pixelpass-ceremony-images span {
   height: 102px;
+  position: relative;
   display: grid;
+  overflow: hidden;
   place-items: center;
   color: #2b6888;
   border: 1px solid #75a9c1;
@@ -2142,15 +2233,29 @@ input {
 }
 
 .pixelpass-ceremony-images span:nth-child(2n) {
-  color: #316d4a;
-  border-color: #84b292;
-  background: linear-gradient(145deg, #e1f2e8, #82bd98);
+  color: #245f80;
+  border-color: #76a9c6;
+  background: linear-gradient(145deg, #dceff8, #6faed1);
 }
 
 .pixelpass-ceremony-images span:nth-child(3n) {
   color: #496a38;
   border-color: #8eb77d;
   background: linear-gradient(145deg, #e5f3c6, #91c882);
+}
+
+.pixelpass-ceremony-images span.has-preview {
+  background-position: center;
+  background-size: cover;
+}
+
+.pixelpass-ceremony-images span.has-preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  box-shadow: inset 0 0 18px rgba(34, 110, 140, 0.2);
+  pointer-events: none;
 }
 
 .pixelpass-ceremony-images svg {
@@ -2356,10 +2461,6 @@ input {
   font-weight: 750;
 }
 
-.tone-gold .pixelpass-passcode-issuer {
-  border-color: #8d671f;
-  background: linear-gradient(#f5cf72, #c48a26 52%, #986114);
-}
 
 .tone-blue .pixelpass-passcode-issuer {
   border-color: #426f91;

@@ -593,11 +593,11 @@ export default function Dashboard() {
                 ) : (
                   <div className="pixelpass-empty-state">
                     <PawPrint aria-hidden="true" />
-                    <h2>no matching paw prints T~T</h2>
+                    <h2>No Passwords Found</h2>
                     <p>
                       {activeCategory === "secure-notes"
                         ? "secure notes are still curled up for now >w<"
-                        : "try another search or pick a different folder nyah"}
+                        : "Try another search or pick a different folder."}
                     </p>
                   </div>
                 )}
