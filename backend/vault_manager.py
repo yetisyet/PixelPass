@@ -53,6 +53,9 @@ def add_entry(entry: Entry, config: Config, password: str):
     Add an entry to the vault.
     """
 
+    if config['storage_options']['read_only']:
+        return 1
+
     # Load vault state
     vault: Vault = load_vault(config, password)
 
@@ -78,6 +81,8 @@ def remove_entry(entry_id: int, config: Config, password: str):
     """
     Remove an entry from the vault.
     """
+    if config['storage_options']['read_only']:
+        return 1
 
     # Load vault state
     vault: Vault = load_vault(config, password)
