@@ -1,32 +1,8 @@
 import { sendBackendRequest } from "@/lib/backend-client"
+import { generateTotp, normalizeBase32 } from "@/lib/totp"
 
-// TOTP remains a frontend-first prototype until its backend actions land.
-// Keeping this switch here prevents fixture logic leaking into screens.
-export const USE_FEATURE_STUBS = true
-
-const PASSCODE_PERIOD_SECONDS = 30
-
-const seededPasscodes = [
-  {
-    id: "totp-github",
-    issuer: "GitHub",
-    accountName: "demo@pixelpass.app",
-    tone: "gold",
-  },
-  {
-    id: "totp-discord",
-    issuer: "Discord",
-    accountName: "pixel-paws",
-    tone: "blue",
-  },
-]
-const sessionPasscodes = new Map(
-  seededPasscodes.map((passcode) => [passcode.id, passcode]),
-)
-
-function wait(milliseconds) {
-  return new Promise((resolve) => window.setTimeout(resolve, milliseconds))
-}
+const sessionPasscodes = new Map()
+const passcodeTones = ["gold", "blue", "green"]
 
 function imageUrlToPngPayload(imageUrl) {
   return new Promise((resolve, reject) => {
@@ -48,22 +24,13 @@ function imageUrlToPngPayload(imageUrl) {
   })
 }
 
-function currentPasscode(record, now = Date.now()) {
-  const periodMilliseconds = PASSCODE_PERIOD_SECONDS * 1000
-  const period = Math.floor(now / periodMilliseconds)
-  let hash = 2166136261
-
-  for (const character of `${record.id}:${period}`) {
-    hash ^= character.charCodeAt(0)
-    hash = Math.imul(hash, 16777619)
-  }
+async function currentPasscode(record, now = Date.now()) {
+  const { secret, ...metadata } = record
+  if (!secret) throw new Error("This authenticator entry is missing its secret.")
 
   return {
-    ...record,
-    code: String(Math.abs(hash) % 1_000_000).padStart(6, "0"),
-    expiresAt: (period + 1) * periodMilliseconds,
-    isStub: true,
-    periodSeconds: PASSCODE_PERIOD_SECONDS,
+    ...metadata,
+    ...(await generateTotp(secret, { now })),
   }
 }
 
@@ -130,54 +97,37 @@ export async function initializeGuidedVault({ backendRequest }) {
 }
 
 export async function listPasscodes() {
-  /**
-   * BACKEND_HANDOFF(passcodes.list)
-   * Return passcode metadata and the current code window. The future vault
-   * stores the TOTP secret; it must never persist the rolling six-digit code.
-  */
-  await wait(360)
-  return Array.from(sessionPasscodes.values())
-    .map((record) => currentPasscode(record))
+  return Promise.all(
+    Array.from(sessionPasscodes.values()).map((record) => currentPasscode(record)),
+  )
 }
 
 export async function requestCurrentPasscode(record) {
-  /**
-   * BACKEND_HANDOFF(passcodes.current)
-   * Request a single code by entry ID. Expected fields: code, expiresAt, and
-   * periodSeconds. The secret remains inside the encrypted vault.
-   */
-  await wait(90)
-  return currentPasscode(record)
+  const storedRecord = sessionPasscodes.get(record.id)
+  if (!storedRecord) throw new Error("This authenticator entry is no longer available.")
+  return currentPasscode(storedRecord)
 }
 
 export async function createPasscode({ accountName, issuer, secret }) {
-  /**
-   * BACKEND_HANDOFF(passcodes.create)
-   * Send issuer, accountName, and the authenticator secret over the existing
-   * IPC boundary. The backend validates and encrypts the secret in the vault.
-   */
-  await wait(520)
-
-  if (!issuer.trim() || !accountName.trim() || secret.trim().length < 8) {
-    throw new Error("Enter an issuer, account, and a valid authenticator secret.")
+  const normalizedIssuer = issuer.trim()
+  const normalizedAccountName = accountName.trim()
+  if (!normalizedIssuer || !normalizedAccountName) {
+    throw new Error("Enter both the issuer and account name.")
   }
+  const normalizedSecret = normalizeBase32(secret)
 
   const record = {
-    accountName: accountName.trim(),
-    id: `totp-${Date.now()}`,
-    issuer: issuer.trim(),
-    tone: "green",
+    accountName: normalizedAccountName,
+    id: globalThis.crypto?.randomUUID?.() ?? `totp-${Date.now()}`,
+    issuer: normalizedIssuer,
+    secret: normalizedSecret,
+    tone: passcodeTones[sessionPasscodes.size % passcodeTones.length],
   }
+  const generatedRecord = await currentPasscode(record)
   sessionPasscodes.set(record.id, record)
-  return currentPasscode(record)
+  return generatedRecord
 }
 
 export async function removePasscode(id) {
-  /**
-   * BACKEND_HANDOFF(passcodes.remove)
-   * Remove the passcode entry by ID and persist the updated encrypted vault.
-  */
-  await wait(240)
-  sessionPasscodes.delete(id)
-  return { id, isStub: true, success: true }
+  return { id, success: sessionPasscodes.delete(id) }
 }

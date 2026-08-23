@@ -8,6 +8,8 @@ const featureClient = readFileSync(new URL("../src/lib/vault-feature-client.js",
 const iconSystem = readFileSync(new URL("../src/components/win7_icons.jsx", import.meta.url), "utf8")
 const mainProcess = readFileSync(new URL("../src/main.js", import.meta.url), "utf8")
 const packageManifest = readFileSync(new URL("../package.json", import.meta.url), "utf8")
+const passcodeVault = readFileSync(new URL("../src/components/passcode_vault.jsx", import.meta.url), "utf8")
+const app = readFileSync(new URL("../src/App.jsx", import.meta.url), "utf8")
 const stylesheet = readFileSync(new URL("../src/index.css", import.meta.url), "utf8")
 
 function colorHue(red, green, blue) {
@@ -34,7 +36,7 @@ test("setup source choices are text-only Windows 7 controls", () => {
 
   assert.ok(sourceRail, "expected the setup source rail to exist")
   assert.doesNotMatch(sourceRail, /<(Images|Upload|ImageIcon)\b/)
-  assert.match(sourceRail, /<strong>Sample pack<\/strong><small>Fastest for a demo<\/small>/)
+  assert.match(sourceRail, /<strong>Sample pack<\/strong><small>Fastest setup<\/small>/)
   assert.match(sourceRail, /<strong>Choose files<\/strong><small>Use your own images<\/small>/)
   assert.match(sourceRail, /<strong>Paste image<\/strong><small>Repeat it as covers<\/small>/)
 })
@@ -87,6 +89,14 @@ test("frontend uses the authored Windows 7 icon system without Lucide", () => {
   assert.match(iconSystem, /export const HomeIcon = icon\("home"\)/)
   assert.match(iconSystem, /export const KeyRound = icon\("key"\)/)
   assert.doesNotMatch(packageManifest, /lucide-react/)
+})
+
+test("frontend contains no demo controls, seeded passcodes, or global navbar", () => {
+  assert.doesNotMatch(`${app}\n${component}\n${dashboard}\n${passcodeVault}`, /\bdemo\b/i)
+  assert.doesNotMatch(dashboard, /loadDemoPasswords|demoEntries|pixelpass-command-bar/)
+  assert.doesNotMatch(featureClient, /seededPasscodes|isStub|Math\.imul/)
+  assert.doesNotMatch(app, /<nav\b|pixelpass-global-nav|pixelpass-route-buttons/)
+  assert.doesNotMatch(stylesheet, /pixelpass-global-nav|pixelpass-command-bar|pixelpass-demo-badge/)
 })
 
 test("frontend palette contains no purple or violet colors", () => {

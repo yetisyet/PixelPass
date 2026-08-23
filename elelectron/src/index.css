@@ -162,30 +162,6 @@ input {
     linear-gradient(145deg, #2c8db7 0%, #65c3cd 42%, #1b5e88 100%);
 }
 
-.pixelpass-global-nav {
-  min-height: 54px;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 7px 16px;
-  border-bottom: 1px solid rgba(20, 63, 85, 0.72);
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.72),
-    0 2px 8px rgba(10, 42, 58, 0.3);
-  background:
-    linear-gradient(rgba(255, 255, 255, 0.68), rgba(205, 232, 243, 0.68) 46%, rgba(118, 183, 211, 0.62) 47%, rgba(208, 236, 245, 0.62));
-  backdrop-filter: blur(10px);
-}
-
-.pixelpass-brand,
-.pixelpass-brand > span:last-child,
-.pixelpass-route-buttons,
-.pixelpass-route-buttons button,
-.pixelpass-command-bar,
-.pixelpass-command-group,
-.pixelpass-command-bar button,
 .pixelpass-sidebar-heading,
 .pixelpass-service-cell,
 .pixelpass-action-cell button,
@@ -196,52 +172,6 @@ input {
   align-items: center;
 }
 
-.pixelpass-brand {
-  gap: 9px;
-  min-width: 0;
-  text-shadow: 0 1px rgba(255, 255, 255, 0.8);
-}
-
-.pixelpass-brand > span:last-child {
-  min-width: 0;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.08;
-}
-
-.pixelpass-brand strong {
-  font-size: 15px;
-  letter-spacing: 0.01em;
-}
-
-.pixelpass-brand small {
-  margin-top: 3px;
-  color: #345b71;
-  font-size: 10px;
-}
-
-.pixelpass-brand-icon {
-  display: grid;
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  place-items: center;
-  color: #fff;
-  border: 1px solid rgba(33, 64, 84, 0.9);
-  border-radius: 8px;
-  box-shadow:
-    inset 0 1px rgba(255, 255, 255, 0.74),
-    inset 0 -1px rgba(24, 79, 105, 0.35),
-    0 1px 2px rgba(12, 42, 58, 0.4);
-  background: linear-gradient(#9edced, #4b9fc0 48%, #23759d 52%, #62b1cd);
-}
-
-.pixelpass-brand-icon svg {
-  width: 21px;
-  height: 21px;
-  filter: drop-shadow(0 1px rgba(22, 67, 90, 0.7));
-}
-
 .pixelpass-win7-icon {
   display: inline-block;
   overflow: visible;
@@ -250,19 +180,6 @@ input {
   filter: drop-shadow(0 1px 1px rgba(22, 61, 80, 0.24));
 }
 
-.pixelpass-route-buttons {
-  gap: 6px;
-}
-
-.win7 .pixelpass-route-buttons button {
-  min-width: 88px;
-  min-height: 30px;
-  justify-content: center;
-  gap: 6px;
-}
-
-.pixelpass-route-buttons svg,
-.pixelpass-command-bar button svg,
 .pixelpass-action-cell button svg,
 .pixelpass-home-actions button svg {
   width: 15px;
@@ -270,7 +187,7 @@ input {
 }
 
 .pixelpass-page {
-  min-height: calc(100vh - 54px);
+  min-height: 100vh;
   box-sizing: border-box;
   display: grid;
   place-items: center;
@@ -279,7 +196,7 @@ input {
 
 .win7 .pixelpass-main-window {
   width: min(1180px, 100%);
-  height: min(720px, calc(100vh - 90px));
+  height: min(720px, calc(100vh - 36px));
   min-height: 490px;
   display: flex;
   flex-direction: column;
@@ -303,28 +220,6 @@ input {
   overflow: hidden;
   border: 1px solid #7192a8;
   background: #f5f8fa;
-}
-
-.pixelpass-command-bar {
-  min-height: 42px;
-  box-sizing: border-box;
-  flex: 0 0 auto;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 6px 8px;
-  border-bottom: 1px solid #aebdcc;
-  box-shadow: inset 0 1px #fff;
-  background: linear-gradient(#fff, #edf3f8 54%, #dce8f1);
-}
-
-.pixelpass-command-group {
-  gap: 6px;
-}
-
-.win7 .pixelpass-command-bar button {
-  min-height: 28px;
-  gap: 6px;
-  justify-content: center;
 }
 
 .pixelpass-explorer {
@@ -489,6 +384,28 @@ input {
 
 .pixelpass-content-header > div:first-child {
   min-width: 0;
+}
+
+.pixelpass-content-actions {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.win7 .pixelpass-content-actions > button {
+  min-height: 30px;
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.pixelpass-content-actions > button svg {
+  width: 15px;
+  height: 15px;
 }
 
 .pixelpass-search {
@@ -1080,10 +997,6 @@ input {
 }
 
 @media (max-width: 720px) {
-  .pixelpass-global-nav {
-    padding-inline: 10px;
-  }
-
   .pixelpass-page {
     place-items: stretch;
     padding: 8px;
@@ -1091,7 +1004,7 @@ input {
 
   .win7 .pixelpass-main-window {
     width: 100%;
-    height: calc(100vh - 70px);
+    height: calc(100vh - 16px);
     min-height: 500px;
   }
 
@@ -1119,6 +1032,10 @@ input {
     align-items: stretch;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .pixelpass-content-actions {
+    width: 100%;
   }
 
   .pixelpass-search {
@@ -1150,35 +1067,11 @@ input {
 
 @media (max-width: 520px) {
   .pixelpass-page {
-    min-height: calc(100vh - 58px);
+    min-height: 100vh;
   }
 
   .win7 .pixelpass-search input {
     height: 44px;
-  }
-
-  .pixelpass-brand small,
-  .pixelpass-command-group button:first-child svg,
-  .pixelpass-command-group button:nth-child(2) svg {
-    display: none;
-  }
-
-  .pixelpass-brand-icon {
-    width: 30px;
-    height: 30px;
-    flex-basis: 30px;
-  }
-
-  .win7 .pixelpass-route-buttons button {
-    min-width: 38px;
-    min-height: 44px;
-    padding-inline: 9px;
-    font-size: 0;
-  }
-
-  .pixelpass-route-buttons button svg {
-    width: 16px;
-    height: 16px;
   }
 
   .pixelpass-explorer {
@@ -1214,15 +1107,6 @@ input {
   .pixelpass-sidebar-link svg {
     width: 18px;
     height: 18px;
-  }
-
-  .pixelpass-command-bar {
-    align-items: stretch;
-  }
-
-  .win7 .pixelpass-command-bar button {
-    min-width: 0;
-    padding-inline: 8px;
   }
 
   .pixelpass-content-header h1 {
@@ -1329,7 +1213,7 @@ input {
 
 .pixelpass-flow-window {
   width: min(960px, 100%);
-  height: min(690px, calc(100vh - 92px));
+  height: min(690px, calc(100vh - 36px));
   min-height: 470px;
   display: flex;
   flex-direction: column;
@@ -1600,8 +1484,7 @@ input {
 .win7 .pixelpass-step-actions button,
 .win7 .pixelpass-picker-actions button,
 .win7 .pixelpass-recovery-picker > button,
-.win7 .pixelpass-recovery-result > button,
-.pixelpass-command-bar button {
+.win7 .pixelpass-recovery-result > button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1657,21 +1540,6 @@ input {
 .pixelpass-icon-button svg {
   width: 16px;
   height: 16px;
-}
-
-.pixelpass-demo-badge {
-  flex: 0 0 auto;
-  margin-top: 3px;
-  padding: 4px 8px;
-  color: #24566f;
-  border: 1px solid #9fc7d4;
-  border-radius: 9px;
-  box-shadow: inset 0 1px #fff;
-  background: linear-gradient(#fff, #e2f1f7);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
 }
 
 .pixelpass-flow-progress {
@@ -2542,6 +2410,37 @@ input {
   letter-spacing: 0.05em;
 }
 
+.pixelpass-passcode-digits {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2px;
+  overflow: hidden;
+}
+
+.pixelpass-passcode-digits > span {
+  display: block;
+  animation: pixelpass-digit-roll 480ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: calc(var(--digit-index) * 28ms);
+}
+
+.pixelpass-passcode-digits > span:nth-child(4) {
+  margin-left: 9px;
+}
+
+@keyframes pixelpass-digit-roll {
+  from {
+    opacity: 0.22;
+    filter: blur(2px);
+    transform: translateY(-0.9em) rotateX(-38deg);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0) rotateX(0);
+  }
+}
+
 .pixelpass-passcode-value small {
   grid-column: 1 / -1;
   display: flex;
@@ -2629,7 +2528,7 @@ input {
 
 @media (max-width: 860px) {
   .pixelpass-flow-window {
-    height: calc(100vh - 84px);
+    height: calc(100vh - 16px);
     min-height: 0;
   }
 
@@ -2814,5 +2713,9 @@ input {
 
   .pixelpass-dial-progress {
     transition: none;
+  }
+
+  .pixelpass-passcode-digits > span {
+    animation: none;
   }
 }

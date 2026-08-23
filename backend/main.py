@@ -119,9 +119,17 @@ def edit_password(usrInput, config):
     )
     status = vault_manager.add_entry(thisEntry, config, mPassword)
     if status == 0:
-        payload = {"action": 5, "success": True}
+        payload = {
+            "elecID": usrInput["elecID"],
+            "action": 5,
+            "success": True,
+        }
     else:
-        payload = {"action": 5, "success": False}
+        payload = {
+            "elecID": usrInput["elecID"],
+            "action": 5,
+            "success": False,
+        }
     print(json.dumps(payload))
 
 

@@ -469,7 +469,7 @@ export default function HomeExperience() {
               </div>
               <div className="pixelpass-source-rail" role="group" aria-label="Image source">
                 <button aria-pressed={setupSource === "sample"} className={setupSource === "sample" ? "is-selected" : ""} type="button" onClick={() => setSetupSource("sample")}>
-                  <strong>Sample pack</strong><small>Fastest for a demo</small>
+                  <strong>Sample pack</strong><small>Fastest setup</small>
                 </button>
                 <button aria-pressed={setupSource === "files"} className={setupSource === "files" ? "is-selected" : ""} type="button" onClick={chooseSetupFiles}>
                   <strong>Choose files</strong><small>Use your own images</small>
