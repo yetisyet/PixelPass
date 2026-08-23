@@ -500,13 +500,13 @@ export default function HomeExperience() {
               </div>
               <div className="pixelpass-source-rail" role="group" aria-label="Image source">
                 <button aria-pressed={setupSource === "sample"} className={setupSource === "sample" ? "is-selected" : ""} type="button" onClick={() => setSetupSource("sample")}>
-                  <Images aria-hidden="true" /><strong>Sample pack</strong><small>Fastest for a demo</small>
+                  <strong>Sample pack</strong><small>Fastest for a demo</small>
                 </button>
                 <button aria-pressed={setupSource === "files"} className={setupSource === "files" ? "is-selected" : ""} type="button" onClick={chooseSetupFiles}>
-                  <Upload aria-hidden="true" /><strong>Choose files</strong><small>Use your own images</small>
+                  <strong>Choose files</strong><small>Use your own images</small>
                 </button>
                 <button aria-pressed={setupSource === "paste"} className={setupSource === "paste" ? "is-selected" : ""} type="button" onClick={() => setSetupSource("paste")}>
-                  <ImageIcon aria-hidden="true" /><strong>Paste image</strong><small>Repeat it as covers</small>
+                  <strong>Paste image</strong><small>Repeat it as covers</small>
                 </button>
               </div>
               {setupSource === "paste" ? (
@@ -545,13 +545,6 @@ export default function HomeExperience() {
                   onChange={(event) => setThreshold(Number(event.target.value))}
                 />
               </label>
-              <div className="pixelpass-survival-note">
-                <ShieldCheck aria-hidden="true" />
-                <div>
-                  <strong>Any {threshold} images can rebuild this vault.</strong>
-                  <span>You can lose {setupTotal - threshold} {setupTotal - threshold === 1 ? "image" : "images"} and still recover it.</span>
-                </div>
-              </div>
             </div>
           )}
 

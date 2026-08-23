@@ -1664,7 +1664,7 @@ input {
   flex: 0 0 24px;
   place-items: center;
   border: 1px solid #aabcc7;
-  border-radius: 50%;
+  border-radius: 0;
   box-shadow: inset 0 1px #fff;
   background: linear-gradient(#fff, #e8edf0);
   font-size: 10px;
@@ -1722,13 +1722,13 @@ input {
 }
 
 .win7 .pixelpass-source-rail button {
-  min-height: 82px;
+  min-height: 64px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   justify-content: center;
-  gap: 3px;
-  padding: 10px;
+  gap: 2px;
+  padding: 11px 12px;
   color: #31556a;
   text-align: left;
 }
@@ -1738,13 +1738,6 @@ input {
   border-color: #65a5c8;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.8);
   background: linear-gradient(#f9fdff, #d3edf9 48%, #b8def0 49%, #e5f6fd);
-}
-
-.pixelpass-source-rail svg {
-  width: 20px;
-  height: 20px;
-  margin-bottom: 3px;
-  color: #7e598f;
 }
 
 .pixelpass-source-rail strong,
@@ -1951,34 +1944,6 @@ input {
 
 .pixelpass-threshold-control input {
   width: 100%;
-}
-
-.pixelpass-survival-note {
-  display: flex;
-  align-items: center;
-  gap: 11px;
-  margin-top: 22px;
-  padding: 12px 14px;
-  color: #315e42;
-  border: 1px solid #9cc2a8;
-  box-shadow: inset 0 1px #fff;
-  background: linear-gradient(#fbfffc, #e2f1e6);
-}
-
-.pixelpass-survival-note svg {
-  width: 27px;
-  height: 27px;
-  flex: 0 0 27px;
-}
-
-.pixelpass-survival-note strong,
-.pixelpass-survival-note span {
-  display: block;
-}
-
-.pixelpass-survival-note span {
-  margin-top: 2px;
-  font-size: 10px;
 }
 
 .pixelpass-seal-layout {
@@ -2828,11 +2793,6 @@ input {
 
   .pixelpass-threshold-visual small {
     margin-top: 4px;
-  }
-
-  .pixelpass-survival-note {
-    margin-top: 10px;
-    padding: 8px 12px;
   }
 
   .pixelpass-step-actions {
