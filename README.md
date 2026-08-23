@@ -1,17 +1,17 @@
 # Pixel Pass
 
-### 2026 UQCS hackathon
-
 #### A password manager that securely stores passwords in images!
+
+##### Built during the 2026 UQCS hackathon
 
 Pixel Pass! A password manager the securely stores your passwords in images! Pixel Pass uses AES to encrypt passwords which are stored in images using steganography. 
 
 
 ----------
 Running the application:
-This application requires the following
-electron 41.x +
-python3 +
+This application requires the following: <br>
+electron 41.x + <br>
+python3 + <br>
 npm
 
 Installation instructions:
@@ -29,5 +29,5 @@ NOTE: if you would like to reset the app please
 
 ---------
 
-## Members:
+## Coders:
 Tim, Jayden, Zwe, Aki, Ash
