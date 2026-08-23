@@ -29,5 +29,5 @@ NOTE: if you would like to reset the app please
 
 ---------
 
-## Pixel Pass tteam:
+## Pixel Pass team:
 Tim, Jayden, Zwe, Aki, Ash
