@@ -1,5 +1,6 @@
-import { app, BrowserWindow, clipboard, dialog, ipcMain } from 'electron';
+import { app, BrowserWindow, clipboard, dialog, ipcMain, nativeImage } from 'electron';
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import { spawn } from 'node:child_process';
@@ -11,7 +12,11 @@ const BACKEND_STARTUP_TIMEOUT_MS = 300_000;
 const pendingBackendRequests = new Map();
 const pendingStartupRequests = new Set();
 let backendProcess = null;
+let backendRestartPromise = null;
 let backendStartupState = null;
+let backendReady = false;
+let isQuitting = false;
+let startupSubmissionInFlight = false;
 
 const getBackendRequestTimeout = (request) => {
   if ([3, 4, 5].includes(request.action)) return BACKEND_WRITE_TIMEOUT_MS;
@@ -48,6 +53,7 @@ const rejectBackendRequest = (elecID, error) => {
 
   clearTimeout(pendingRequest.timeout);
   pendingBackendRequests.delete(elecID);
+  if (pendingRequest.isStartupSubmission) startupSubmissionInFlight = false;
   pendingRequest.reject(error);
 };
 
@@ -65,13 +71,28 @@ const getBackendPath = () => {
   return path.resolve(app.getAppPath(), '..', 'backend', 'main.py');
 };
 
+const getPythonCommand = () => {
+  if (process.env.PIXELPASS_PYTHON) return process.env.PIXELPASS_PYTHON;
+
+  if (!app.isPackaged) {
+    const virtualEnvironmentPython = process.platform === 'win32'
+      ? path.resolve(app.getAppPath(), '.venv', 'Scripts', 'python.exe')
+      : path.resolve(app.getAppPath(), '.venv', 'bin', 'python');
+
+    if (existsSync(virtualEnvironmentPython)) return virtualEnvironmentPython;
+  }
+
+  return process.platform === 'win32' ? 'python' : 'python3';
+};
+
 const startBackend = () => {
   if (backendProcess) return;
 
   backendStartupState = null;
+  backendReady = false;
+  startupSubmissionInFlight = false;
   const backendPath = getBackendPath();
-  const pythonCommand = process.env.PIXELPASS_PYTHON
-    || (process.platform === 'win32' ? 'python' : 'python3');
+  const pythonCommand = getPythonCommand();
   const child = spawn(pythonCommand, ['-u', backendPath], {
     cwd: path.dirname(backendPath),
     stdio: ['pipe', 'pipe', 'pipe'],
@@ -118,6 +139,10 @@ const startBackend = () => {
 
     clearTimeout(pendingRequest.timeout);
     pendingBackendRequests.delete(response.elecID);
+    if (pendingRequest.isStartupSubmission) {
+      startupSubmissionInFlight = false;
+      if (response.success === true) backendReady = true;
+    }
     pendingRequest.resolve(response);
   });
 
@@ -135,6 +160,8 @@ const startBackend = () => {
   child.on('close', (code) => {
     outputLines.close();
     if (backendProcess === child) backendProcess = null;
+    backendReady = false;
+    startupSubmissionInFlight = false;
     const error = new Error(`Python backend stopped unexpectedly with exit code ${code}.`);
     rejectBackendStartup(error);
     rejectAllBackendRequests(error);
@@ -144,8 +171,40 @@ const startBackend = () => {
 const stopBackend = () => {
   const child = backendProcess;
   backendProcess = null;
+  backendStartupState = null;
+  backendReady = false;
+  startupSubmissionInFlight = false;
 
   if (child && !child.killed) child.kill();
+};
+
+const restartBackend = () => {
+  if (backendRestartPromise) return backendRestartPromise;
+
+  backendRestartPromise = new Promise((resolve, reject) => {
+    const child = backendProcess;
+    const launchBackend = () => {
+      if (isQuitting) {
+        reject(new Error('PixelPass is shutting down.'));
+        return;
+      }
+
+      startBackend();
+      waitForBackendStartup().then(resolve, reject);
+    };
+
+    if (!child) {
+      launchBackend();
+      return;
+    }
+
+    child.once('close', launchBackend);
+    stopBackend();
+  }).finally(() => {
+    backendRestartPromise = null;
+  });
+
+  return backendRestartPromise;
 };
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -159,6 +218,7 @@ ipcMain.handle('clipboard:write', (_event, text) => {
 });
 
 ipcMain.handle('python:startup', () => waitForBackendStartup());
+ipcMain.handle('python:lock', () => restartBackend());
 
 ipcMain.handle('dialog:select-directory', async () => {
   const selection = await dialog.showOpenDialog({
@@ -173,15 +233,28 @@ ipcMain.handle('dialog:select-image-paths', async () => {
   const selection = await dialog.showOpenDialog({
     filters: [
       {
-        name: 'Images',
-        extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'],
+        name: 'PixelPass PNG images',
+        extensions: ['png'],
       },
     ],
     properties: ['openFile', 'multiSelections'],
-    title: 'Choose PixelPass seed images',
+    title: 'Choose PixelPass PNG images',
   });
 
-  return selection.canceled ? [] : selection.filePaths;
+  if (selection.canceled) return [];
+
+  return selection.filePaths.map((filePath) => {
+    const image = nativeImage.createFromPath(filePath);
+    const preview = image.isEmpty()
+      ? null
+      : image.resize({ quality: 'good', width: 320 }).toDataURL();
+
+    return {
+      name: path.basename(filePath),
+      path: filePath,
+      preview,
+    };
+  });
 });
 
 ipcMain.handle('python:request', (_event, request) => {
@@ -194,10 +267,23 @@ ipcMain.handle('python:request', (_event, request) => {
     throw new Error('Python backend is not running.');
   }
 
+  const isStartupSubmission = request.action === undefined || request.action === null;
+  if (isStartupSubmission && backendReady) {
+    throw new Error('The Python backend is already unlocked.');
+  }
+  if (isStartupSubmission && startupSubmissionInFlight) {
+    throw new Error('A Python backend unlock request is already in progress.');
+  }
+  if (!isStartupSubmission && !backendReady) {
+    throw new Error('The Python backend must be unlocked before handling vault actions.');
+  }
+
   const elecID = randomUUID();
   const protocolRequest = { ...request, elecID };
   const protocolLine = `${JSON.stringify(protocolRequest)}\n`;
   const timeoutMs = getBackendRequestTimeout(request);
+
+  if (isStartupSubmission) startupSubmissionInFlight = true;
 
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
@@ -209,7 +295,12 @@ ipcMain.handle('python:request', (_event, request) => {
       );
     }, timeoutMs);
 
-    pendingBackendRequests.set(elecID, { reject, resolve, timeout });
+    pendingBackendRequests.set(elecID, {
+      isStartupSubmission,
+      reject,
+      resolve,
+      timeout,
+    });
 
     child.stdin.write(protocolLine, 'utf8', (error) => {
       if (error) rejectBackendRequest(elecID, error);
@@ -254,6 +345,7 @@ app.whenReady().then(() => {
 });
 
 app.on('before-quit', () => {
+  isQuitting = true;
   stopBackend();
 });
 

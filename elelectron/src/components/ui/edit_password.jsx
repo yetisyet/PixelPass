@@ -1,5 +1,5 @@
 import { useEffect, useId, useState } from "react"
-import { Pencil, PawPrint } from "lucide-react"
+import { Pencil, PawPrint } from "@/components/win7_icons"
 
 import Win7Dialog from "@/components/win7_dialog"
 

@@ -1,5 +1,5 @@
 import { useId, useState } from "react"
-import { PawPrint } from "lucide-react"
+import { PawPrint } from "@/components/win7_icons"
 
 import Win7Dialog from "@/components/win7_dialog"
 
@@ -70,11 +70,11 @@ export default function AddPasswordDialog({ onCreate, onOpenChange, open }) {
       <form className="pixelpass-add-form" id={formId} onSubmit={handleSubmit}>
         <div className="pixelpass-dialog-heading">
           <span className="pixelpass-dialog-icon" aria-hidden="true">
-            <PawPrint />
+            <img width="16" height="16" src="https://img.icons8.com/tiny-color/16/key.png" alt="key"/>
           </span>
           <div>
-            <h2>leave a new paw print in ur vault nyah ^w^</h2>
-            <p>ur password goes straight to the backend, not the list &gt;///&lt;</p>
+            <h2>Add Password</h2>
+            <p>Your password gets encrypted with AES and stored securely via steganography</p>
           </div>
         </div>
 

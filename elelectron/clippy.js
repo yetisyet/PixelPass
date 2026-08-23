@@ -1,5 +1,5 @@
-import { initAgent } from "https://cdn.jsdelivr.net/npm/clippyjs/dist/index.mjs";
-import * as agents from "https://cdn.jsdelivr.net/npm/clippyjs/dist/agents/index.mjs";
+const CLIPPY_MODULE_URL = "https://cdn.jsdelivr.net/npm/clippyjs/dist/index.mjs";
+const CLIPPY_AGENTS_URL = "https://cdn.jsdelivr.net/npm/clippyjs/dist/agents/index.mjs";
 
 function generateRandomBase64() {
   const bytes = new Uint8Array(18);
@@ -8,14 +8,34 @@ function generateRandomBase64() {
   return btoa(String.fromCharCode(...bytes));
 }
 
-function oneInTenChance() {
+function randomIndex(maxExclusive) {
   const randomNumber = new Uint32Array(1);
   crypto.getRandomValues(randomNumber);
 
-  return randomNumber[0] % 10 === 0;
+  return randomNumber[0] % maxExclusive;
 }
 
-function generateBase64_24() {
+function randomCharacter(characters) {
+  return characters[randomIndex(characters.length)];
+}
+
+function shuffleCharacters(characters) {
+  for (let index = characters.length - 1; index > 0; index -= 1) {
+    const swapIndex = randomIndex(index + 1);
+    [characters[index], characters[swapIndex]] = [
+      characters[swapIndex],
+      characters[index],
+    ];
+  }
+
+  return characters.join("");
+}
+
+function oneInTenChance() {
+  return randomIndex(10) === 0;
+}
+
+function generateSecurePassword() {
   const randomString = generateRandomBase64();
   const easterEggs = [];
 
@@ -23,7 +43,18 @@ function generateBase64_24() {
   if (oneInTenChance()) easterEggs.push("FurRy");
 
   const prefix = easterEggs.join("");
-  return `${prefix}${randomString.slice(prefix.length)}`;
+  const requiredCharacters = [
+    randomCharacter("ABCDEFGHIJKLMNOPQRSTUVWXYZ"),
+    randomCharacter("abcdefghijklmnopqrstuvwxyz"),
+    randomCharacter("0123456789"),
+  ];
+  const randomCharacterCount = 24 - prefix.length - requiredCharacters.length;
+  const suffix = shuffleCharacters([
+    ...requiredCharacters,
+    ...randomString.slice(0, randomCharacterCount),
+  ]);
+
+  return `${prefix}${suffix}${randomCharacter("?@#$")}`;
 }
 
 async function copyToClipboard(text) {
@@ -100,16 +131,42 @@ function createMessageBubble(target) {
 }
 
 async function initializeClippy() {
+  // Keep the assistant optional: a missing network connection must never stop
+  // the local vault UI from loading.
+  const [{ initAgent }, agents] = await Promise.all([
+    import(/* @vite-ignore */ CLIPPY_MODULE_URL),
+    import(/* @vite-ignore */ CLIPPY_AGENTS_URL),
+  ]);
   const agent = await initAgent(agents.Clippy);
   const replaceMessage = createMessageBubble(agent._el);
 
   agent.show();
-  replaceMessage(
-    "Hello! I'm Clippy, your virtual assistant. Click me for a secure password!",
+  agent._el.setAttribute(
+    "aria-label",
+    "Clippy password helper. Click to copy a generated secure password.",
   );
+  agent._el.title = "Click Clippy to copy a generated secure password";
+
+  // The welcome bubble obscures the primary cards at the app's default 800px width.
+  if (window.innerWidth >= 900) {
+    replaceMessage(
+      "Hello! I'm Clippy, your virtual assistant. Click me for a secure password!",
+    );
+  } else {
+    Object.assign(agent._el.style, {
+      position: "fixed",
+      top: "3px",
+      right: "auto",
+      bottom: "auto",
+      left: "166px",
+      zIndex: "10001",
+      transform: "scale(0.52)",
+      transformOrigin: "top left",
+    });
+  }
 
   agent._el.addEventListener("click", async () => {
-    const randomString = generateBase64_24();
+    const randomString = generateSecurePassword();
 
     try {
       await copyToClipboard(randomString);
@@ -124,3 +181,4 @@ async function initializeClippy() {
 initializeClippy().catch((error) => {
   console.error("Could not initialize Clippy:", error);
 });
+

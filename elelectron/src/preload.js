@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld("pixelPassBackend", {
   selectDirectory: () => ipcRenderer.invoke("dialog:select-directory"),
   selectImagePaths: () => ipcRenderer.invoke("dialog:select-image-paths"),
   startup: () => ipcRenderer.invoke("python:startup"),
+  lock: () => ipcRenderer.invoke("python:lock"),
   request: async (request) => {
     try {
       return await ipcRenderer.invoke("python:request", request)
