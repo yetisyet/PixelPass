@@ -1,12 +1,15 @@
 # the main python file
+# external imports
 import json
 import base64
 from io import BytesIO
+from PIL import Image
 
+# imports from other files
 import vault_manager
 import status_manager
 from structs import Vault, Entry, Config
-from PIL import Image
+
 """"
     Function that runs the entire backend.
     Acts like a server, waiting for the frontend to send something.
@@ -15,7 +18,7 @@ from PIL import Image
 """
 
 mode = -1
-mPassword = "pee"
+mPassword = "a"  # doesn't work with an empty string for reason
 
 
 """
@@ -134,17 +137,17 @@ def startup():  # should return a config instance
         new_mode = returnVal["mode"]
 
         # Special behaviour for recovery
-        if new_mode == 5: # Recovery
+        if new_mode == 5:  # Recovery
             # The total and majority are not needed, we overwrite these when checking the master password!
-            vault = vault_manager.init_vault(
-                new_mode, 0, 0 
-            )
+            vault = vault_manager.init_vault(new_mode, 0, 0)
             mode_populate(returnVal)
             conf = get_config()
-            success = vault_manager.check_master_password(conf, mPassword) # Sets total and majority
+            success = vault_manager.check_master_password(
+                conf, mPassword
+            )  # Sets total and majority
 
-            if len(returnVal["paths"]) < conf['storage_options']['total']:
-                conf['storage_options']['read_only'] = True
+            if len(returnVal["paths"]) < conf["storage_options"]["total"]:
+                conf["storage_options"]["read_only"] = True
         else:
             total = returnVal["total"]
             majority = returnVal["majority"]
@@ -153,9 +156,7 @@ def startup():  # should return a config instance
             if majority > total:
                 raise ValueError("Majority cannot be greater than total")
 
-            vault = vault_manager.init_vault(
-                new_mode, total, majority
-            )
+            vault = vault_manager.init_vault(new_mode, total, majority)
             mode_populate(returnVal)
             conf = get_config()
             status_manager.save_vault(vault, conf, mPassword)
@@ -163,7 +164,15 @@ def startup():  # should return a config instance
     else:
         conf = get_config()
         success = vault_manager.check_master_password(conf, mPassword)
-    print(json.dumps({"success": success, "elecID": returnVal["elecID"], "read_only": conf['storage_options']['read_only']}))
+    print(
+        json.dumps(
+            {
+                "success": success,
+                "elecID": returnVal["elecID"],
+                "read_only": conf["storage_options"]["read_only"],
+            }
+        )
+    )
 
     if not success:
         return startup()
