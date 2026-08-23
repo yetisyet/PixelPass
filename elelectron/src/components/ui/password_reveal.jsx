@@ -73,11 +73,11 @@ export default function PasswordRevealDialog({
       <div className="pixelpass-reveal-body">
         <div className="pixelpass-dialog-heading">
           <span className="pixelpass-dialog-icon" aria-hidden="true">
-            <PawPrint />
+            <img width="24" height="24" src="https://img.icons8.com/color-pixels/32/unlock-2.png" alt="unlock-2"/>
           </span>
           <div>
-            <h2>meowing ur pwd for {entry?.username ?? "this account"}</h2>
-            <p>keep this window open only as long as u need it nyah &gt;///&lt;</p>
+            <h2>Decrypting {entry?.username ?? "this account"}</h2>
+            <p>Keep this window open only as long as u need it &gt;///&lt;</p>
           </div>
         </div>
 
