@@ -1,9 +1,10 @@
 AI WAS USED IN THIS PROJECT AS DESCRIBED BELOW:
 
+Models & use:
 AI (GPT 5.6) was used for bugtesting both backend and frontend
 AI (GPT 5.6) was used to verifying, testing and checking the frontend and testing the compatability of backend and frontend.
 
-Compute used:
+Total Cost:
 2x GPT plus subscriptions used (2x$35 AUD monthly subscription) = $70
 1x free GPT plus subscription trial used ($35 AUD) = $35 AUD (DID NOT PAY, APPROX WORTH)
 TOTAL PAID ($70 AUD), TOTAL VALUE = $115 AUD (under the limit)
