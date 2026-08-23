@@ -187,12 +187,12 @@ ipcMain.handle('dialog:select-image-paths', async () => {
   const selection = await dialog.showOpenDialog({
     filters: [
       {
-        name: 'Images',
-        extensions: ['png', 'jpg', 'jpeg', 'webp', 'bmp'],
+        name: 'PixelPass PNG images',
+        extensions: ['png'],
       },
     ],
     properties: ['openFile', 'multiSelections'],
-    title: 'Choose PixelPass seed images',
+    title: 'Choose PixelPass PNG images',
   });
 
   return selection.canceled ? [] : selection.filePaths;

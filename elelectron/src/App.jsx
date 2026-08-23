@@ -1,5 +1,5 @@
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom"
-import { HomeIcon, KeyRound, PawPrint } from "lucide-react"
+import { HomeIcon, KeyRound } from "@/components/win7_icons"
 import logo from "./lib/logo.png"
 import Dashboard from "@/pages/dashboard"
 import Home from "@/pages/home"

@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Star,
   X,
-} from "lucide-react"
+} from "@/components/win7_icons"
 import { useLocation, useNavigate } from "react-router-dom"
 import background from "../lib/background.jpg"
 import PasscodeVault from "@/components/passcode_vault"
@@ -115,7 +115,7 @@ function nextPasswordId(entries) {
   return numericIds.length === 0 ? 1 : Math.max(...numericIds) + 1
 }
 
-function PasswordRow({ onEdit, onRemove, onView, password }) {
+function PasswordRow({ isReadOnly, onEdit, onRemove, onView, password }) {
   return (
     <tr>
       <td>
@@ -146,6 +146,8 @@ function PasswordRow({ onEdit, onRemove, onView, password }) {
           <button
             aria-label={`Edit ${password.serviceName}`}
             className="pixelpass-edit-button"
+            disabled={isReadOnly}
+            title={isReadOnly ? "This recovered vault is read-only" : undefined}
             type="button"
             onClick={() => onEdit(password)}
           >
@@ -155,7 +157,8 @@ function PasswordRow({ onEdit, onRemove, onView, password }) {
           <button
             aria-label={`Remove ${password.serviceName}`}
             className="pixelpass-remove-button"
-            title="Remove login"
+            disabled={isReadOnly}
+            title={isReadOnly ? "This recovered vault is read-only" : "Remove login"}
             type="button"
             onClick={() => onRemove(password)}
           >
@@ -170,6 +173,7 @@ function PasswordRow({ onEdit, onRemove, onView, password }) {
 export default function Dashboard() {
   const location = useLocation()
   const navigate = useNavigate()
+  const isReadOnly = Boolean(location.state?.readOnly)
   const { pos, onMouseDown } = useDraggable({ x: 0, y: 0 })
   const [activeCategory, setActiveCategory] = useState("all")
   const [error, setError] = useState("")
@@ -214,7 +218,11 @@ export default function Dashboard() {
 
       setPasswords(normalizeEntries(response.data.entries))
       setIsDemoMode(false)
-      setStatusMessage("vault unlocked nyah ^w^")
+      setStatusMessage(
+        isReadOnly
+          ? "recovered vault opened in read-only mode"
+          : "vault unlocked nyah ^w^",
+      )
     } catch (loadError) {
       if (requestId !== listRequestId.current) return
       setPasswords([])
@@ -224,7 +232,7 @@ export default function Dashboard() {
     } finally {
       if (requestId === listRequestId.current) setIsLoading(false)
     }
-  }, [])
+  }, [isReadOnly])
 
   useEffect(() => {
     if (hasLoadedPasswords.current) return
@@ -320,6 +328,10 @@ export default function Dashboard() {
   }
 
   async function createPassword(values) {
+    if (isReadOnly) {
+      throw new Error("This recovered vault is read-only. Recover it again with every original share to make changes.")
+    }
+
     if (isDemoMode) {
       setPasswords((currentPasswords) => [
         {
@@ -377,6 +389,9 @@ export default function Dashboard() {
 
   async function editPassword(values) {
     if (!entryToEdit) throw new Error("No login was selected.")
+    if (isReadOnly) {
+      throw new Error("This recovered vault is read-only. Recover it again with every original share to make changes.")
+    }
 
     if (!isDemoMode) {
       const response = await sendBackendRequest({
@@ -422,6 +437,10 @@ export default function Dashboard() {
   }
 
   async function removePassword(entry) {
+    if (isReadOnly) {
+      throw new Error("This recovered vault is read-only. Recover it again with every original share to make changes.")
+    }
+
     if (!isDemoMode) {
       const response = await sendBackendRequest({
         action: 4,
@@ -458,6 +477,8 @@ export default function Dashboard() {
       setStatusMessage("could not load the vault T~T")
     } else if (isDemoMode) {
       setStatusMessage("demo vault loaded >w<")
+    } else if (isReadOnly) {
+      setStatusMessage("recovered vault is open in read-only mode")
     } else {
       setStatusMessage("vault unlocked nyah ^w^")
     }
@@ -486,7 +507,7 @@ export default function Dashboard() {
           style={{ cursor: "grab" }}
         >
           <div className="title-bar-text">
-            PixelPass — {activeCategory === "passcodes" ? "Authenticator demo" : isDemoMode ? "Demo vault" : error ? "Vault connection" : "Unlocked vault"}
+            PixelPass — {activeCategory === "passcodes" ? "Authenticator demo" : isDemoMode ? "Demo vault" : error ? "Vault connection" : isReadOnly ? "Recovered vault — read only" : "Unlocked vault"}
           </div>
           <div
             className="title-bar-controls"
@@ -512,6 +533,8 @@ export default function Dashboard() {
             </div>
             <button
               className="default"
+              disabled={isReadOnly}
+              title={isReadOnly ? "This recovered vault is read-only" : undefined}
               type="button"
               onClick={() => activeCategory === "passcodes" ? setIsAddPasscodeOpen(true) : setIsAddOpen(true)}
             >
@@ -519,6 +542,16 @@ export default function Dashboard() {
               {activeCategory === "passcodes" ? "Add passcode" : "New login"}
             </button>
           </div>
+
+          {isReadOnly && !isDemoMode && (
+            <div className="pixelpass-read-only-notice" role="status">
+              <Lock aria-hidden="true" />
+              <div>
+                <strong>Recovered in read-only mode</strong>
+                <span>You can view and reveal saved logins. Recover again with every original image share to add, edit, or remove entries.</span>
+              </div>
+            </div>
+          )}
 
           <div className="pixelpass-explorer">
             <aside className="pixelpass-sidebar">
@@ -637,6 +670,7 @@ export default function Dashboard() {
                       <tbody>
                         {visiblePasswords.map((password) => (
                           <PasswordRow
+                            isReadOnly={isReadOnly}
                             key={password.id}
                             password={password}
                             onEdit={openEditDialog}
@@ -679,7 +713,7 @@ export default function Dashboard() {
               : `${visiblePasswords.length} of ${passwords.length} items`}
           </p>
           <p className="status-bar-field">
-            {activeCategory === "passcodes" ? "Demo data" : isDemoMode ? "Demo mode" : error ? "Offline" : "Unlocked"}
+            {activeCategory === "passcodes" ? "Demo data" : isDemoMode ? "Demo mode" : error ? "Offline" : isReadOnly ? "Read-only" : "Unlocked"}
           </p>
         </div>
       </section>

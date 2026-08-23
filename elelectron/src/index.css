@@ -152,7 +152,7 @@ input {
   --pixelpass-muted: #526674;
   --pixelpass-blue: #0b6ead;
   --pixelpass-soft-blue: #e8f5ff;
-  --pixelpass-paw: #8f5f9f;
+  --pixelpass-paw: #197aa6;
   min-height: 100vh;
   color: var(--pixelpass-ink);
   font-family: "Segoe UI", SegoeUI, Tahoma, sans-serif;
@@ -231,15 +231,23 @@ input {
   border-radius: 8px;
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.74),
-    inset 0 -1px rgba(58, 35, 69, 0.35),
+    inset 0 -1px rgba(24, 79, 105, 0.35),
     0 1px 2px rgba(12, 42, 58, 0.4);
-  background: linear-gradient(#c99ad5, #88609c 48%, #664579 52%, #936ca2);
+  background: linear-gradient(#9edced, #4b9fc0 48%, #23759d 52%, #62b1cd);
 }
 
 .pixelpass-brand-icon svg {
   width: 21px;
   height: 21px;
-  filter: drop-shadow(0 1px rgba(52, 34, 64, 0.7));
+  filter: drop-shadow(0 1px rgba(22, 67, 90, 0.7));
+}
+
+.pixelpass-win7-icon {
+  display: inline-block;
+  overflow: visible;
+  flex: 0 0 auto;
+  vertical-align: middle;
+  filter: drop-shadow(0 1px 1px rgba(22, 61, 80, 0.24));
 }
 
 .pixelpass-route-buttons {
@@ -560,6 +568,42 @@ input {
   flex: 0 0 auto;
 }
 
+.pixelpass-read-only-notice {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  color: #594b28;
+  border-bottom: 1px solid #cbbd8f;
+  box-shadow: inset 0 1px #fff;
+  background: linear-gradient(#fffdf5, #f3ecd2);
+}
+
+.pixelpass-read-only-notice > svg {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  color: #806d34;
+}
+
+.pixelpass-read-only-notice > div {
+  min-width: 0;
+}
+
+.pixelpass-read-only-notice strong,
+.pixelpass-read-only-notice span {
+  display: block;
+}
+
+.pixelpass-read-only-notice span {
+  margin-top: 1px;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .pixelpass-list-frame {
   min-height: 0;
   flex: 1;
@@ -814,10 +858,10 @@ input {
   flex: 0 0 40px;
   place-items: center;
   color: #fff;
-  border: 1px solid #67506e;
+  border: 1px solid #39718a;
   border-radius: 6px;
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.72), 0 1px 2px rgba(51, 36, 57, 0.36);
-  background: linear-gradient(#ca9ed5, #805c91);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.72), 0 1px 2px rgba(28, 70, 91, 0.36);
+  background: linear-gradient(#a9dff0, #367fa0);
 }
 
 .pixelpass-dialog-icon svg {
@@ -1393,7 +1437,7 @@ input {
 .pixelpass-proof-line svg {
   width: 21px;
   height: 21px;
-  color: #78518c;
+  color: #247ca3;
 }
 
 .pixelpass-choice-actions {
@@ -1470,8 +1514,8 @@ input {
 }
 
 .pixelpass-path-button:nth-child(2) .pixelpass-path-icon {
-  border-color: #71517e;
-  background: linear-gradient(#c99ad5, #8a619b 49%, #6d4b7d 51%, #a174ae);
+  border-color: #4d7c5d;
+  background: linear-gradient(#a6d99d, #5aa36d 49%, #397d53 51%, #79bc86);
 }
 
 .pixelpass-path-icon svg {
@@ -1497,12 +1541,12 @@ input {
   place-items: center;
   margin-top: 28px;
   color: #fff;
-  border: 1px solid #674b74;
+  border: 1px solid #3d7892;
   border-radius: 50%;
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.7),
-    0 8px 18px rgba(73, 46, 83, 0.27);
-  background: linear-gradient(#c79ad4, #7c578c 53%, #9567a6);
+    0 8px 18px rgba(32, 91, 118, 0.27);
+  background: linear-gradient(#9bd7e9, #3f91b4 53%, #63abc5);
 }
 
 .pixelpass-unlock-form {
@@ -1619,11 +1663,11 @@ input {
   flex: 0 0 auto;
   margin-top: 3px;
   padding: 4px 8px;
-  color: #5d3f68;
-  border: 1px solid #b9a0c0;
+  color: #24566f;
+  border: 1px solid #9fc7d4;
   border-radius: 9px;
   box-shadow: inset 0 1px #fff;
-  background: linear-gradient(#fff, #ede3f1);
+  background: linear-gradient(#fff, #e2f1f7);
   font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1787,8 +1831,8 @@ input {
 
 .pixelpass-image-tile:nth-child(2n) {
   background:
-    linear-gradient(rgba(244, 240, 248, 0.44), rgba(194, 168, 207, 0.74)),
-    linear-gradient(145deg, #e5d5eb, #ac85bc);
+    linear-gradient(rgba(241, 250, 247, 0.44), rgba(161, 208, 184, 0.74)),
+    linear-gradient(145deg, #dff1e8, #78b99a);
   background-position: center;
   background-size: cover;
 }
@@ -1858,7 +1902,7 @@ input {
 .pixelpass-paste-zone svg {
   width: 32px;
   height: 32px;
-  color: #7e598f;
+  color: #287ca0;
 }
 
 .pixelpass-path-readout {
@@ -1937,7 +1981,7 @@ input {
 
 .pixelpass-threshold-control > strong {
   order: 3;
-  color: #684b74;
+  color: #236f92;
   font-size: 16px;
   text-align: right;
 }
@@ -1987,7 +2031,7 @@ input {
   width: 44px;
   height: 44px;
   margin-bottom: 13px;
-  color: #805b91;
+  color: #287ca0;
 }
 
 .pixelpass-vault-summary strong,
@@ -2044,8 +2088,7 @@ input {
   margin-bottom: 5px;
 }
 
-.pixelpass-recovery-empty,
-.pixelpass-result-placeholder {
+.pixelpass-recovery-empty {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2061,12 +2104,11 @@ input {
   background: #f5fafc;
 }
 
-.pixelpass-recovery-empty svg,
-.pixelpass-result-placeholder svg {
+.pixelpass-recovery-empty svg {
   width: 34px;
   height: 34px;
   margin-bottom: 8px;
-  color: #835d94;
+  color: #287ca0;
 }
 
 .pixelpass-recovery-result {
@@ -2074,101 +2116,63 @@ input {
   flex-direction: column;
 }
 
-.pixelpass-result-placeholder {
-  min-height: 100%;
-  padding: 24px;
-}
-
-.pixelpass-result-placeholder strong,
-.pixelpass-result-placeholder span {
-  display: block;
-}
-
-.pixelpass-result-placeholder span {
-  max-width: 30ch;
-  margin-top: 5px;
-  font-size: 10px;
-  line-height: 1.4;
-}
-
-.pixelpass-share-verdict {
+.pixelpass-recovery-readiness {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 9px;
+  margin-bottom: 20px;
   padding: 10px;
   border: 1px solid #c7a1a1;
   background: #fff0f0;
 }
 
-.pixelpass-share-verdict.is-ready {
+.pixelpass-recovery-readiness.is-ready {
   color: #315f43;
   border-color: #96bca3;
   background: #edf8f0;
 }
 
-.pixelpass-share-verdict > svg {
+.pixelpass-recovery-readiness > svg {
   width: 25px;
   height: 25px;
   flex: 0 0 25px;
 }
 
-.pixelpass-share-verdict strong,
-.pixelpass-share-verdict span {
+.pixelpass-recovery-readiness > div {
+  min-width: 0;
+}
+
+.pixelpass-recovery-readiness strong,
+.pixelpass-recovery-readiness span {
   display: block;
 }
 
-.pixelpass-share-verdict span {
-  margin-top: 2px;
-  font-size: 9px;
-}
-
-.pixelpass-share-meter {
-  display: flex;
-  gap: 5px;
-  margin: 14px 0;
-}
-
-.pixelpass-share-meter span {
-  height: 8px;
-  flex: 1;
-  border: 1px solid #c1ccd2;
-  background: #e3e9ec;
-}
-
-.pixelpass-share-meter span.is-found {
-  border-color: #5a8e73;
-  background: linear-gradient(#9bcbaa, #52936d);
-}
-
-.pixelpass-recovery-facts {
-  margin: 0 0 17px;
-}
-
-.pixelpass-recovery-facts > div {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  padding: 7px 0;
-  border-bottom: 1px solid #dce5e9;
-}
-
-.pixelpass-recovery-facts dt {
-  color: #627783;
-}
-
-.pixelpass-recovery-facts dd {
-  margin: 0;
-  color: #284f65;
-  font-weight: 600;
+.pixelpass-recovery-readiness span {
+  max-width: 38ch;
+  margin-top: 3px;
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 .pixelpass-recovery-result > input {
-  margin-bottom: 12px;
+  margin-bottom: 5px;
+}
+
+.pixelpass-recovery-result > small {
+  color: #607582;
+  line-height: 1.35;
 }
 
 .pixelpass-recovery-result > button {
-  margin-top: auto;
+  margin-top: 18px;
   align-self: flex-start;
+}
+
+.pixelpass-recovery-count {
+  margin: -6px 0 0;
+  color: #4e6a79;
+  font-size: 10px;
+  overflow-wrap: anywhere;
 }
 
 .pixelpass-ceremony {
@@ -2206,12 +2210,12 @@ input {
   display: grid;
   place-items: center;
   color: #fff;
-  border: 1px solid #654b72;
+  border: 1px solid #315f75;
   border-radius: 50%;
   box-shadow:
     inset 0 1px rgba(255, 255, 255, 0.68),
-    0 10px 24px rgba(76, 48, 87, 0.25);
-  background: linear-gradient(#c79bd3, #815b91 52%, #684775);
+    0 10px 24px rgba(31, 88, 113, 0.25);
+  background: linear-gradient(#9edbec, #3d8daf 52%, #286c8b);
 }
 
 .pixelpass-data-capsule svg {
@@ -2270,9 +2274,9 @@ input {
 }
 
 .pixelpass-ceremony-images span:nth-child(2n) {
-  color: #714d7e;
-  border-color: #a784af;
-  background: linear-gradient(145deg, #eadcf0, #b18abe);
+  color: #316d4a;
+  border-color: #84b292;
+  background: linear-gradient(145deg, #e1f2e8, #82bd98);
 }
 
 .pixelpass-ceremony-images span:nth-child(3n) {
@@ -2342,7 +2346,7 @@ input {
 .pixelpass-flow-loading > svg {
   width: 42px;
   height: 42px;
-  color: #805a91;
+  color: #287ca0;
 }
 
 .pixelpass-flow-loading .marquee {
@@ -2420,7 +2424,7 @@ input {
   width: 27px;
   height: 27px;
   flex: 0 0 27px;
-  color: #805b91;
+  color: #287ca0;
 }
 
 .pixelpass-passcode-explainer > div {
@@ -2484,9 +2488,9 @@ input {
   font-weight: 750;
 }
 
-.tone-violet .pixelpass-passcode-issuer {
-  border-color: #654c72;
-  background: linear-gradient(#c69ad2, #825b91 52%, #684876);
+.tone-gold .pixelpass-passcode-issuer {
+  border-color: #8d671f;
+  background: linear-gradient(#f5cf72, #c48a26 52%, #986114);
 }
 
 .tone-blue .pixelpass-passcode-issuer {

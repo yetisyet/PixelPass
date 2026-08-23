@@ -8,18 +8,14 @@ export function toProtocolLine(request) {
 
 export async function sendBackendRequest(request) {
   if (!isBackendConnected()) {
-    throw new Error(
-      "Python backend is not connected yet. Use Load demo to test the vault for now.",
-    )
+    throw new Error("Python backend is not connected.")
   }
 
   let rawResponse
   try {
     rawResponse = await window.pixelPassBackend.request(request)
   } catch {
-    throw new Error(
-      "Python backend could not answer yet. Use Load demo while the transport is being connected.",
-    )
+    throw new Error("Python backend could not answer the request.")
   }
   const response =
     typeof rawResponse === "string" ? JSON.parse(rawResponse.trim()) : rawResponse

@@ -8,7 +8,7 @@ import {
   RefreshCw,
   ShieldCheck,
   Trash2,
-} from "lucide-react"
+} from "@/components/win7_icons"
 
 import Win7Dialog from "@/components/win7_dialog"
 import {

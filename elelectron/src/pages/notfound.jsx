@@ -1,4 +1,4 @@
-import { PawPrint } from "lucide-react"
+import { PawPrint } from "@/components/win7_icons"
 import { useNavigate } from "react-router-dom"
 
 export default function NotFound() {
